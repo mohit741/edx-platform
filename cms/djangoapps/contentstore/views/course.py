@@ -56,6 +56,7 @@ from course_action_state.models import CourseRerunState, CourseRerunUIStateManag
 from course_creators.views import add_user_with_status_unrequested, get_course_creator_status
 from course_modes.models import CourseMode
 from edxmako.shortcuts import render_to_response
+from mobile_api.models import IgnoreMobileAvailableFlagConfig
 from models.settings.course_grading import CourseGradingModel
 from models.settings.course_metadata import CourseMetadata
 from models.settings.encoder import CourseSettingsEncoder
@@ -1312,6 +1313,11 @@ def advanced_settings_handler(request, course_key_string):
     course_key = CourseKey.from_string(course_key_string)
     with modulestore().bulk_operations(course_key):
         course_module = get_course_and_check_access(course_key, request.user)
+
+        advanced_dict = CourseMetadata.fetch(course_module)
+        if IgnoreMobileAvailableFlagConfig.is_enabled() and 'edx.org' in request.get_host():
+            advanced_dict.get('mobile_available')['deprecated'] = True
+
         if 'text/html' in request.META.get('HTTP_ACCEPT', '') and request.method == 'GET':
             publisher_enabled = configuration_helpers.get_value_for_org(
                 course_module.location.org,
@@ -1321,7 +1327,7 @@ def advanced_settings_handler(request, course_key_string):
 
             return render_to_response('settings_advanced.html', {
                 'context_course': course_module,
-                'advanced_dict': CourseMetadata.fetch(course_module),
+                'advanced_dict': advanced_dict,
                 'advanced_settings_url': reverse_course_url('advanced_settings_handler', course_key),
                 'publisher_enabled': publisher_enabled,
 

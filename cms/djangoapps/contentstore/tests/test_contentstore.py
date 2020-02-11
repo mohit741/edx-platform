@@ -22,6 +22,7 @@ from django.test.utils import override_settings
 from edxval.api import create_video, get_videos_for_course
 from fs.osfs import OSFS
 from lxml import etree
+from mock import patch
 from opaque_keys import InvalidKeyError
 from opaque_keys.edx.keys import AssetKey, CourseKey, UsageKey
 from opaque_keys.edx.locations import CourseLocator
@@ -1538,7 +1539,8 @@ class ContentStoreTest(ContentStoreTestCase):
         self.assertIn('markdown', context, "markdown is missing from context")
         self.assertNotIn('markdown', problem.editable_metadata_fields, "Markdown slipped into the editable metadata fields")
 
-    def test_cms_imported_course_walkthrough(self):
+    @patch('cms.djangoapps.contentstore.views.course.IgnoreMobileAvailableFlagConfig.is_enabled')
+    def test_cms_imported_course_walkthrough(self, mobile_ignore_enabled):
         """
         Import and walk through some common URL endpoints. This just verifies non-500 and no other
         correct behavior, so it is not a deep test
@@ -1554,6 +1556,7 @@ class ContentStoreTest(ContentStoreTestCase):
         course_items = import_course_from_xml(
             self.store, self.user.id, TEST_DATA_DIR, ['simple'], create_if_not_present=True
         )
+        mobile_ignore_enabled.return_value = False
         course_key = course_items[0].id
 
         resp = self._show_course_overview(course_key)

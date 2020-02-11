@@ -91,6 +91,42 @@ class CourseSettingsEncoderTest(CourseTestCase):
         self.assertEqual(jsondetails['string'], 'string')
 
 
+class CourseAdvanceSettingViewTest(CourseTestCase, MilestonesTestCaseMixin):
+    """
+    Tests for AdvanceSettings View.
+    """
+
+    def setUp(self):
+        super(CourseAdvanceSettingViewTest, self).setUp()
+        self.fullcourse = CourseFactory.create()
+        self.course_setting_url = get_url(self.course.id, 'advanced_settings_handler')
+
+    @patch('cms.djangoapps.contentstore.views.course.IgnoreMobileAvailableFlagConfig.is_enabled')
+    def test_mobile_field_available(self, mobile_ignore_enabled):
+
+        """
+        Test to check if Mobile Course Available flag is viewable or not based
+        on IgnoreMobileAvailableFlagConfig configuration and host (edx.org).
+        """
+
+        mobile_ignore_enabled.return_value = False
+        response = self.client.get_html(self.course_setting_url)
+        start = response.content.decode('utf-8').find("mobile_available")
+        end = response.content.decode('utf-8').find("}", start)
+        settings_fields = json.loads(response.content.decode('utf-8')[start + len("mobile_available: "):end + 1])
+
+        self.assertEquals(settings_fields["display_name"], "Mobile Course Available")
+        self.assertEquals(settings_fields["deprecated"], False)
+
+        mobile_ignore_enabled.return_value = True
+        response = self.client.get_html(self.course_setting_url, HTTP_HOST='edx.org')
+        start = response.content.decode('utf-8').find("mobile_available")
+        end = response.content.decode('utf-8').find("}", start)
+        settings_fields = json.loads(response.content.decode('utf-8')[start + len("mobile_available: "):end + 1])
+
+        self.assertEquals(settings_fields["display_name"], "Mobile Course Available")
+        self.assertEquals(settings_fields["deprecated"], True)
+
 @ddt.ddt
 class CourseDetailsViewTest(CourseTestCase, MilestonesTestCaseMixin):
     """
@@ -825,7 +861,9 @@ class CourseMetadataEditingTest(CourseTestCase):
         set_current_request(self.request)
         self.addCleanup(set_current_request, None)
 
-    def test_fetch_initial_fields(self):
+    @patch('cms.djangoapps.contentstore.views.course.IgnoreMobileAvailableFlagConfig.is_enabled')
+    def test_fetch_initial_fields(self, mobile_ignore_enabled):
+        mobile_ignore_enabled.return_value = False
         test_model = CourseMetadata.fetch(self.course)
         self.assertIn('display_name', test_model, 'Missing editable metadata field')
         self.assertEqual(test_model['display_name']['value'], self.course.display_name)
@@ -1059,7 +1097,9 @@ class CourseMetadataEditingTest(CourseTestCase):
         self.assertNotEqual(test_model['days_early_for_beta']['value'], "supposed to be an integer",
                             'days_early_for beta should not be updated to a wrong value')
 
-    def test_correct_http_status(self):
+    @patch('cms.djangoapps.contentstore.views.course.IgnoreMobileAvailableFlagConfig.is_enabled')
+    def test_correct_http_status(self, mobile_ignore_enabled):
+        mobile_ignore_enabled.return_value = False
         json_data = json.dumps({
             "advertised_start": {"value": 1, "display_name": "Course Advertised Start Date", },
             "days_early_for_beta": {
@@ -1110,7 +1150,9 @@ class CourseMetadataEditingTest(CourseTestCase):
         self.assertIn('days_early_for_beta', test_model, 'Missing days_early_for_beta metadata field')
         self.assertEqual(test_model['days_early_for_beta']['value'], 2, "days_early_for_beta not expected value")
 
-    def test_http_fetch_initial_fields(self):
+    @patch('cms.djangoapps.contentstore.views.course.IgnoreMobileAvailableFlagConfig.is_enabled')
+    def test_http_fetch_initial_fields(self, mobile_ignore_enabled):
+        mobile_ignore_enabled.return_value = False
         response = self.client.get_json(self.course_setting_url)
         test_model = json.loads(response.content.decode('utf-8'))
         self.assertIn('display_name', test_model, 'Missing editable metadata field')
@@ -1125,7 +1167,9 @@ class CourseMetadataEditingTest(CourseTestCase):
         self.assertIn('showanswer', test_model, 'showanswer field ')
         self.assertIn('xqa_key', test_model, 'xqa_key field ')
 
-    def test_http_update_from_json(self):
+    @patch('cms.djangoapps.contentstore.views.course.IgnoreMobileAvailableFlagConfig.is_enabled')
+    def test_http_update_from_json(self, mobile_ignore_enabled):
+        mobile_ignore_enabled.return_value = False
         response = self.client.ajax_post(self.course_setting_url, {
             "advertised_start": {"value": "start A"},
             "days_early_for_beta": {"value": 2},
@@ -1148,12 +1192,14 @@ class CourseMetadataEditingTest(CourseTestCase):
         self.assertEqual(test_model['advertised_start']['value'], 'start B', "advertised_start not expected value")
 
     @patch.dict(settings.FEATURES, {'ENABLE_EDXNOTES': True})
+    @patch('cms.djangoapps.contentstore.views.course.IgnoreMobileAvailableFlagConfig.is_enabled')
     @patch('xmodule.util.xmodule_django.get_current_request')
-    def test_post_settings_with_staff_not_enrolled(self, mock_request):
+    def test_post_settings_with_staff_not_enrolled(self, mock_request, mobile_ignore_enabled):
         """
         Tests that we can post advance settings when course staff is not enrolled.
         """
         mock_request.return_value = Mock(META={'HTTP_HOST': 'localhost'})
+        mobile_ignore_enabled.return_value = False
         user = UserFactory.create(is_staff=True)
         CourseStaffRole(self.course.id).add_users(user)
 
