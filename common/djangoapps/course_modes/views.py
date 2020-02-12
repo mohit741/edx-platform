@@ -44,7 +44,6 @@ from xmodule.modulestore.django import modulestore
 
 LOG = logging.getLogger(__name__)
 
-
 class ChooseModeView(View):
     """View used when the user is asked to pick a mode.
 

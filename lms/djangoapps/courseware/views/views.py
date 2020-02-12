@@ -905,19 +905,25 @@ def course_about(request, course_id):
         ecommerce_checkout_link = ''
         ecommerce_bulk_checkout_link = ''
         single_paid_mode = None
+        # Ecommerce-shoppingcart integration. Handle multi currency courses. -mohit741
         if ecommerce_checkout:
             if len(modes) == 1 and list(modes.values())[0].min_price:
                 single_paid_mode = list(modes.values())[0]
             else:
-                # have professional ignore other modes for historical reasons
-                single_paid_mode = modes.get(CourseMode.PROFESSIONAL)
+                _modes = CourseMode.paid_modes_for_course(course_id)
+                if request.user.is_authenticated and request.user.profile.country.code == 'IN':
+                    single_paid_mode = _modes[0]
+                else:
+                    single_paid_mode = _modes[1]
 
             if single_paid_mode and single_paid_mode.sku:
                 ecommerce_checkout_link = ecomm_service.get_checkout_page_url(single_paid_mode.sku)
             if single_paid_mode and single_paid_mode.bulk_sku:
                 ecommerce_bulk_checkout_link = ecomm_service.get_checkout_page_url(single_paid_mode.bulk_sku)
-
-        registration_price, course_price = get_course_prices(course)
+        if request.user.is_authenticated and request.user.profile.country.code == 'IN':
+            registration_price, course_price = get_course_prices(course,currency='inr')
+        else:
+            registration_price, course_price = get_course_prices(course)
 
         # Determine which checkout workflow to use -- LMS shoppingcart or Otto basket
         can_add_course_to_cart = _is_shopping_cart_enabled and registration_price and not ecommerce_checkout_link

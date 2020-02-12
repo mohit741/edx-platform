@@ -10,6 +10,7 @@ from io import BytesIO
 
 import piexif
 import six
+import logging
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.utils.translation import ugettext as _
@@ -18,7 +19,7 @@ from PIL import Image
 from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_storage
 
 from .exceptions import ImageValidationError
-
+log = logging.getLogger(__name__)
 ImageType = namedtuple('ImageType', ('extensions', 'mimetypes', 'magic'))
 
 IMAGE_TYPES = {
@@ -66,6 +67,7 @@ def create_profile_images(image_file, profile_image_names):
     original = Image.open(image_file)
     image = _set_color_mode_to_rgb(original)
     image = _crop_image_to_square(image)
+    log.info('-------------------------------Image-------------------------------%s || %s',image,storage)
 
     for size, name in profile_image_names.items():
         scaled = _scale_image(image, size)

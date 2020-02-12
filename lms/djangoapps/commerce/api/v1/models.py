@@ -19,7 +19,9 @@ UNDEFINED = object()
 
 
 class Course(object):
-    """ Pseudo-course model used to group CourseMode objects. """
+    """ Pseudo-course model used to group CourseMode objects. 
+        Making proper changes so that to accomodate multiple SKUs -mohit741
+    """
     id = None  # pylint: disable=invalid-name
     modes = None
     _deleted_modes = None
@@ -86,13 +88,17 @@ class Course(object):
         # so don't assign it a value here unless it is specifically included in attrs.
         if 'verification_deadline' in attrs:
             self.verification_deadline = attrs.get('verification_deadline')
+        for mode in self.modes:
+            log.info('-----------------------------Modes in loop---------------------------%s and sku %s', mode, mode.sku)
 
-        existing_modes = {mode.mode_slug: mode for mode in self.modes}
+        existing_modes = {mode.sku: mode for mode in self.modes}
+        log.info('------------------------Existing Modes-----------------------\n %s', existing_modes)
         merged_modes = set()
         merged_mode_keys = set()
 
         for posted_mode in attrs.get('modes', []):
-            merged_mode = existing_modes.get(posted_mode.mode_slug, CourseMode())
+            log.info('------------------------New Modes-----------------------\n %s', posted_mode)
+            merged_mode = existing_modes.get(posted_mode.sku, CourseMode())
 
             merged_mode.course_id = self.id
             merged_mode.mode_slug = posted_mode.mode_slug
@@ -105,7 +111,7 @@ class Course(object):
             merged_mode.save()
 
             merged_modes.add(merged_mode)
-            merged_mode_keys.add(merged_mode.mode_slug)
+            merged_mode_keys.add(merged_mode.sku)
 
         # Masters degrees are not sold through the eCommerce site.
         # So, Masters course modes are not included in PUT calls to this API,
@@ -133,6 +139,7 @@ class Course(object):
             raise ValueError
 
         course_modes = CourseMode.objects.filter(course_id=course_id)
+        log.info('--------------------The course modes-----------------------------%s',course_modes)
 
         if course_modes:
             verification_deadline = VerificationDeadline.deadline_for_course(course_id)

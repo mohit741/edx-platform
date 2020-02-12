@@ -22,7 +22,7 @@ COMMENTS_SERVICE_URL = 'http://edx.devstack.forum:4567'
 
 ENTERPRISE_API_URL = '{}/enterprise/api/v1/'.format(LMS_INTERNAL_ROOT_URL)
 
-CREDENTIALS_INTERNAL_SERVICE_URL = 'http://edx.devstack.credentials:18150'
+CREDENTIALS_INTERNAL_SERVICE_URL = 'http://localhost:18150'
 CREDENTIALS_PUBLIC_SERVICE_URL = 'http://localhost:18150'
 
 OAUTH_OIDC_ISSUER = '{}/oauth2'.format(LMS_ROOT_URL)
@@ -75,7 +75,7 @@ ENTERPRISE_MARKETING_FOOTER_QUERY_PARAMS = {}
 
 CREDENTIALS_SERVICE_USERNAME = 'credentials_worker'
 
-COURSE_CATALOG_API_URL = 'http://edx.devstack.discovery:18381/api/v1/'
+COURSE_CATALOG_API_URL = 'http://localhost:18381/api/v1/'
 
 # Uncomment the lines below if you'd like to see SQL statements in your devstack LMS log.
 # LOGGING['handlers']['console']['level'] = 'DEBUG'

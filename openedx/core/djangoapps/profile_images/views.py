@@ -142,6 +142,7 @@ class ProfileImageView(DeveloperErrorViewMixin, APIView):
 
         # process the upload.
         uploaded_file = request.FILES['file']
+        log.info('---------------------Uploaded file-------------------------------%s',uploaded_file)
 
         # no matter what happens, delete the temporary file when we're done
         with closing(uploaded_file):
