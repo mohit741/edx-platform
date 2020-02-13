@@ -129,7 +129,7 @@ fs==2.0.18
 future==0.18.2            # via django-ses, edx-celeryutils, edx-enterprise, pyjwkest
 geoip2==3.0.0
 glob2==0.7
-gunicorn==20.0.4
+gunicorn==19.10.0
 help-tokens==1.0.5
 html5lib==1.0.1
 httplib2==0.15.0
