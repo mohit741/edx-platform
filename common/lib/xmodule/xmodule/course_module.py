@@ -868,7 +868,7 @@ class CourseFields(object):
             # Put the available providers into a format variable so that translators
             # don't translate them.
             available_providers=(
-                ', '.join(get_available_providers())
+                ', '.join(['null'] if None in get_available_providers() else get_available_providers())
             ),
         ),
         scope=Scope.settings,
