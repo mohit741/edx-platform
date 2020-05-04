@@ -520,6 +520,22 @@ def sort_by_start_date(courses):
 
     return courses
 
+# Custom sorting -mohit741
+def sort_by_subject_then_program(courses):
+
+    courses = sorted(
+        courses,
+        key=lambda course: (course.subject, course.program, course.display_name),
+        reverse=False
+    )
+    '''
+    courses = sorted(
+        courses,
+        key=lambda course: course.subject,
+        reverse=False
+    )
+    '''
+    return courses
 
 def get_cms_course_link(course, page='course'):
     """

@@ -323,6 +323,21 @@ class CourseFields(object):
         help=_("Date that certificates become available to learners"),
         scope=Scope.content
     )
+    # Added more course filter fields -mohit741
+    subject = String(
+        display_name=_("Subject"),
+        help=_(
+            "Enter the subject."
+        ),
+        scope=Scope.settings, default=''
+    )
+    program = String(
+        display_name=_("Program"),
+        help=_(
+            "Enter the program."
+        ),
+        scope=Scope.settings, default=''
+    )
     cosmetic_display_price = Integer(
         display_name=_("Cosmetic Course Display Price"),
         help=_(
@@ -868,7 +883,7 @@ class CourseFields(object):
             # Put the available providers into a format variable so that translators
             # don't translate them.
             available_providers=(
-                ', '.join(get_available_providers())
+                ', '.join(['null'] if None in get_available_providers() else get_available_providers())
             ),
         ),
         scope=Scope.settings,
@@ -1081,6 +1096,13 @@ class CourseDescriptor(CourseFields, SequenceDescriptor, LicenseMixin):
             raise type(err)('{msg} For course: {course_id}'.format(msg=text_type(err), course_id=six.text_type(self.id)))
 
         self.set_default_certificate_available_date()
+
+    # Setters for subject and program -mohit741
+    def set_subject(self, subject):
+        self.subject = subject
+
+    def set_program(self, program):
+        self.program = program
 
     def set_grading_policy(self, course_policy):
         """
@@ -1393,6 +1415,15 @@ class CourseDescriptor(CourseFields, SequenceDescriptor, LicenseMixin):
     def id(self):
         """Return the course_id for this course"""
         return self.location.course_key
+
+    # Getters for subject and program
+    @property
+    def get_subject(self):
+        return self.subject
+
+    @property
+    def get_program(self):
+        return self.program
 
     @property
     def start_date_is_still_default(self):

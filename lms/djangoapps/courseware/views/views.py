@@ -63,7 +63,8 @@ from lms.djangoapps.courseware.courses import (
     get_permission_for_course_about,
     get_studio_url,
     sort_by_announcement,
-    sort_by_start_date
+    sort_by_start_date,
+    sort_by_subject_then_program
 )
 from lms.djangoapps.courseware.masquerade import setup_masquerade
 from lms.djangoapps.courseware.model_data import FieldDataCache
@@ -110,6 +111,7 @@ from openedx.features.course_experience import (
     course_home_url_name
 )
 from openedx.features.course_experience.course_tools import CourseToolsPluginManager
+from openedx.features.course_experience.views.course_outline import CourseOutlineFragmentView
 from openedx.features.course_experience.views.course_dates import CourseDatesFragmentView
 from openedx.features.course_experience.waffle import ENABLE_COURSE_ABOUT_SIDEBAR_HTML
 from openedx.features.course_experience.waffle import waffle as course_experience_waffle
@@ -244,12 +246,14 @@ def courses(request):
     course_discovery_meanings = getattr(settings, 'COURSE_DISCOVERY_MEANINGS', {})
     if not settings.FEATURES.get('ENABLE_COURSE_DISCOVERY'):
         courses_list = get_courses(request.user)
+        # Sort the courses according to subject then program -mohit741
+        courses_list = sort_by_subject_then_program(courses_list)
 
-        if configuration_helpers.get_value("ENABLE_COURSE_SORTING_BY_START_DATE",
+        '''if configuration_helpers.get_value("ENABLE_COURSE_SORTING_BY_START_DATE",
                                            settings.FEATURES["ENABLE_COURSE_SORTING_BY_START_DATE"]):
             courses_list = sort_by_start_date(courses_list)
         else:
-            courses_list = sort_by_announcement(courses_list)
+            courses_list = sort_by_announcement(courses_list)'''
 
     # Add marketable programs to the context.
     programs_list = get_programs_with_type(request.site, include_hidden=False)
@@ -867,6 +871,8 @@ def course_about(request, course_id):
         course_details = CourseDetails.populate(course)
         modes = CourseMode.modes_for_course_dict(course_key)
         registered = registered_for_course(course, request.user)
+        if registered:
+            return redirect(reverse(course_home_url_name(course_key), args=[text_type(course_key)]))
 
         staff_access = bool(has_access(request.user, 'staff', course))
         studio_url = get_studio_url(course, 'settings/details')
@@ -946,6 +952,8 @@ def course_about(request, course_id):
 
         # Overview
         overview = CourseOverview.get_from_id(course.id)
+        general_price = overview.general_price
+        inr_price = overview.inr_price
 
         sidebar_html_enabled = course_experience_waffle().is_enabled(ENABLE_COURSE_ABOUT_SIDEBAR_HTML)
 
@@ -958,9 +966,12 @@ def course_about(request, course_id):
 
         # Embed the course reviews tool
         reviews_fragment_view = CourseReviewsModuleFragmentView().render_to_fragment(request, course=course)
+        # Get course outline as a fragment -mohit741
+        outline_fragment = CourseOutlineFragmentView().render_to_fragment(request, course_id, user_is_enrolled=False)
 
         context = {
             'course': course,
+            'outline_fragment': outline_fragment,
             'course_details': course_details,
             'staff_access': staff_access,
             'studio_url': studio_url,
@@ -968,6 +979,8 @@ def course_about(request, course_id):
             'course_target': course_target,
             'is_cosmetic_price_enabled': settings.FEATURES.get('ENABLE_COSMETIC_DISPLAY_PRICE'),
             'course_price': course_price,
+            'general_price' : general_price,
+            'inr_price' : inr_price,
             'in_cart': in_cart,
             'ecommerce_checkout': ecommerce_checkout,
             'ecommerce_checkout_link': ecommerce_checkout_link,
@@ -1575,7 +1588,7 @@ def render_xblock(request, usage_key_string, check_if_enrolled=True):
         block, _ = get_module_by_usage_id(
             request, text_type(course_key), text_type(usage_key), disable_staff_debug_info=True, course=course
         )
-
+        log.info('---------------render_xblock------------------%s', block.iframe_source)
         student_view_context = request.GET.dict()
         student_view_context['show_bookmark_button'] = False
 

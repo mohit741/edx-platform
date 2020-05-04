@@ -77,7 +77,7 @@ function(_) {
                     (new Date()).getTime(), '" />'
                 ].join('');
             });
-
+	    console.log(sourceList);
             // do common initialization independent of player type
             this.init(el, config);
 

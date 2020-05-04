@@ -2,7 +2,7 @@
 API function for retrieving course blocks data
 """
 
-
+import logging
 import lms.djangoapps.course_blocks.api as course_blocks_api
 from lms.djangoapps.course_blocks.transformers.access_denied_filter import AccessDeniedMessageFilterTransformer
 from lms.djangoapps.course_blocks.transformers.hidden_content import HiddenContentTransformer
@@ -16,6 +16,7 @@ from .transformers.block_completion import BlockCompletionTransformer
 from .transformers.blocks_api import BlocksAPITransformer
 from .transformers.milestones import MilestonesAndSpecialExamsTransformer
 
+log = logging.getLogger(__name__)
 
 def get_blocks(
         request,
@@ -99,10 +100,10 @@ def get_blocks(
 
     if include_completion:
         transformers += [BlockCompletionTransformer()]
-
+    
     # transform
     blocks = course_blocks_api.get_course_blocks(user, usage_key, transformers)
-
+    log.info('-----------------api blocks------------------------%s', str(blocks))
     # filter blocks by types
     if block_types_filter:
         block_keys_to_remove = []

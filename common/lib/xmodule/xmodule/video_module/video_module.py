@@ -267,7 +267,9 @@ class VideoBlock(
         track_status = (self.download_track and self.track)
         transcript_download_format = self.transcript_download_format if not track_status else None
         sources = [source for source in self.html5_sources if source]
-
+        # Adding custom fields -mohit741
+        iframe_src = self.iframe_source
+        is_sample = self.is_sample
         download_video_link = None
         branding_info = None
         youtube_streams = ""
@@ -395,6 +397,8 @@ class VideoBlock(
             'autoplay': settings.FEATURES.get('AUTOPLAY_VIDEOS', False),
             'streams': self.youtube_streams,
             'sources': sources,
+            'iframe_src': iframe_src,
+            'is_sample': is_sample,
             'poster': poster,
             'duration': video_duration,
             # This won't work when we move to data that

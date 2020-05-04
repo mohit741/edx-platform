@@ -22,7 +22,19 @@ class VideoFields(object):
         default="Video",
         scope=Scope.settings
     )
-
+    # Adding these two fields for customisation -mohit741
+    iframe_source = String(
+        help=_("IFrame source for this video"),
+        display_name=_("IFrame Source"),
+        default="<iframe/>",
+        scope=Scope.settings
+    )
+    is_sample = String(
+        help=_("Is this a sample video? (Yes/No)"),
+        display_name=_("Is Sample"),
+        default="No",
+        scope=Scope.settings
+    )
     saved_video_position = RelativeTime(
         help=_("Current position in the video."),
         scope=Scope.user_state,

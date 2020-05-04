@@ -16,6 +16,7 @@
 'video/01_initialize.js',
 ['video/03_video_player.js', 'video/00_i18n.js', 'moment', 'underscore'],
 function(VideoPlayer, i18n, moment, _) {
+	console.log("under initialize");
     var moment = moment || window.moment;
     /**
      * @function
@@ -120,6 +121,7 @@ function(VideoPlayer, i18n, moment, _) {
     //     via the 'state' object. Much easier to work this way - you don't
     //     have to do repeated jQuery element selects.
     function _renderElements(state) {
+	console.log(state);
         // Launch embedding of actual video content, or set it up so that it
         // will be done as soon as the appropriate video player (YouTube or
         // stand-alone HTML5) is loaded, and can handle embedding.
@@ -556,7 +558,7 @@ function(VideoPlayer, i18n, moment, _) {
         });
 
         console.log('[Video info]: Initializing video with id "%s".', id);
-
+	
         // We store all settings passed to us by the server in one place. These
         // are "read only", so don't modify them. All variable content lives in
         // 'state' object.
@@ -570,7 +572,13 @@ function(VideoPlayer, i18n, moment, _) {
             // been played once, via player.getAvailableQualityLevels.
             availableHDQualities: []
         });
-
+	console.log(this.config.iframe_src);
+	if(this.config.iframe_src){
+        	html = $.parseHTML(this.config.iframe_src);
+		container.replaceWith(html);
+		return __dfd__.promise();
+	}
+	
         if (this.config.endTime < this.config.startTime) {
             this.config.endTime = null;
         }

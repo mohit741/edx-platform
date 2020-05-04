@@ -25,7 +25,19 @@ urlpatterns = [
     url(r'^press$', views.render, {'template': 'press.html'}, name="press"),
     url(r'^media-kit$', views.render, {'template': 'media-kit.html'}, name="media-kit"),
     url(r'^copyright$', views.render, {'template': 'copyright.html'}, name="copyright"),
-
+    url(r'^access_till_pass$', views.render, {'template': 'access_till_pass.html'}, name="access_till_pass"),
+    url(r'^complete_study_material$', views.render, {'template': 'complete_study_material.html'}, name="complete_study_material"),
+    url(r'^doubt_clear$', views.render, {'template': 'doubt_clear.html'}, name="doubt_clear"),
+    url(r'^lecture_videos$', views.render, {'template': 'lecture_videos.html'}, name="lecture_videos"),
+    url(r'^mock_tests$', views.render, {'template': 'mock_tests.html'}, name="mock_tests"),
+    url(r'^question_bank$', views.render, {'template': 'question_bank.html'}, name="question_bank"),
+    url(r'^sample_paper$', views.render, {'template': 'sample_paper.html'}, name="sample_paper"),
+    url(r'^study_planner$', views.render, {'template': 'study_planner.html'}, name="study_planner"),
+    url(r'^tp1$', views.render, {'template': 'tp1_info.html'}, name="tp1"),
+    url(r'^tp2$', views.render, {'template': 'tp2_info.html'}, name="tp2"),
+    url(r'^instructors_profile',views.render,{'template' : 'instructors_profile.html'},name="instructors_profile"),
+    url(r'^about_mf',views.render,{'template' : 'about_mf.html'},name="about_mf"),
+    url(r'^our_expertise',views.render,{'template' : 'our_expertise.html'},name="our_expertise"),
     # Press releases
     url(r'^press/([_a-zA-Z0-9-]+)$', views.render_press_release, name='press_release'),
 ]

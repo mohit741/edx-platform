@@ -5,12 +5,13 @@ Views to show a course outline.
 
 import datetime
 import re
+import logging
 
 from completion import waffle as completion_waffle
 from django.contrib.auth.models import User
 from django.template.context_processors import csrf
 from django.template.loader import render_to_string
-from opaque_keys.edx.keys import CourseKey
+from opaque_keys.edx.keys import CourseKey, UsageKey
 from pytz import UTC
 from waffle.models import Switch
 from web_fragments.fragment import Fragment
@@ -25,6 +26,7 @@ from xmodule.modulestore.django import modulestore
 from ..utils import get_course_outline_block_tree, get_resume_block
 
 DEFAULT_COMPLETION_TRACKING_START = datetime.datetime(2018, 1, 24, tzinfo=UTC)
+log = logging.getLogger('__name__')
 
 
 class CourseOutlineFragmentView(EdxFragmentView):
@@ -48,12 +50,41 @@ class CourseOutlineFragmentView(EdxFragmentView):
         if not course_block_tree:
             return None
 
+        #TODO Adding video modules -mohit741
+        video_srcs = dict()
+        video_blocks = dict()
+        if 'children' in course_block_tree and not user_is_enrolled:
+            for chapter in course_block_tree['children']:
+                if 'children' in chapter:
+                    for seq in chapter['children']:
+                        if 'children' in seq:
+                            for vert in seq['children']:
+                                if 'children' in vert:
+                                    for child in vert['children']:
+                                        if child['type'] == 'video':
+                                            video_blocks[vert['id']] = child
+
+        if not user_is_enrolled:
+            for vert_id in video_blocks:
+                video_id = video_blocks[vert_id]['id']
+                video_block_id = video_blocks[vert_id]['block_id']
+                try:
+                    usage_key = UsageKey.from_string(str(video_id))
+                    descriptor = modulestore().get_item(usage_key)
+                    if descriptor.is_sample in ('Yes', 'yes', 'YES'):
+                        video_srcs[str(vert_id)] = {}
+                        video_srcs[str(vert_id)]['src'] = descriptor.iframe_source
+                        video_srcs[str(vert_id)]['block_id'] = video_block_id
+                except Exception as e:
+                    log.info('+++++++++++++++++++ Exception in video sourcing +++++++++++++++++++++++ %s', str(e))
+        # log.info('--------------Video block tree--------------------%s', str(video_srcs))        
         context = {
             'csrf': csrf(request)['csrf_token'],
             'course': course_overview,
             'due_date_display_format': course.due_date_display_format,
             'blocks': course_block_tree,
             'enable_links': user_is_enrolled or course.course_visibility == COURSE_VISIBILITY_PUBLIC,
+            'video_srcs': video_srcs
         }
 
         resume_block = get_resume_block(course_block_tree) if user_is_enrolled else None

@@ -7,6 +7,7 @@ BlockStructures.
 from contextlib import contextmanager
 
 import six
+import logging
 
 from . import config
 from .exceptions import BlockStructureNotFound, TransformerDataIncompatible, UsageKeyNotInBlockStructure
@@ -14,6 +15,7 @@ from .factory import BlockStructureFactory
 from .store import BlockStructureStore
 from .transformers import BlockStructureTransformers
 
+log = logging.getLogger(__name__)
 
 class BlockStructureManager(object):
     """

@@ -39,6 +39,9 @@ from social_django.models import UserSocialAuth
 from wiki.models import ArticleRevision
 from wiki.models.pluginbase import RevisionPluginRevision
 
+from oauth2_provider.models import AccessToken
+from django.contrib.auth.models import User
+
 from entitlements.models import CourseEntitlement
 from openedx.core.djangoapps.ace_common.template_context import get_base_template_context
 from openedx.core.djangoapps.api_admin.models import ApiAccessRequest
@@ -1181,3 +1184,22 @@ class UsernameReplacementView(APIView):
                 new_username,
             )
         return True
+
+
+class AccessTokenView(APIView):
+    def get(self, request):
+        
+        try:
+            user_id = request.GET['user']
+            u = User.objects.get(id=user_id)
+            tok_obj = AccessToken.objects.filter(user=u).order_by('-id')[0]
+            tok = str(tok_obj)
+            tz_info = tok_obj.expires.tzinfo
+            now = datetime.datetime.now(tz_info)
+            expires_in = (tok_obj.expires-now).total_seconds()
+            data = {'tok':tok, 'expires_in':expires_in}
+            return Response(data)
+        except Exception as e:
+            return Response({'error':str(e)},status=500)
+        
+
