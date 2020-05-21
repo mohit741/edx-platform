@@ -1290,7 +1290,8 @@ LOCALE_PATHS = _make_locale_paths
 derived('LOCALE_PATHS')
 
 # Messages
-MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
+# MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
+MESSAGE_STORAGE = 'messages_extends.storages.FallbackStorage'
 
 # Guidelines for translators
 TRANSLATORS_GUIDE = 'https://edx.readthedocs.org/projects/edx-developer-guide/en/latest/conventions/internationalization/i18n_translators_guide.html'  # pylint: disable=line-too-long
@@ -2208,6 +2209,11 @@ YOUTUBE = {
 }
 YOUTUBE_API_KEY = 'PUT_YOUR_API_KEY_HERE'
 
+# cron_tab settings -mohit741
+CRONJOBS = [
+    ('*/5 * * * *', 'branding.cron.delete_task', '>> /var/log/cron_job.log')
+]
+
 ################################### APPS ######################################
 
 # The order of INSTALLED_APPS is important, when adding new apps here
@@ -2224,6 +2230,9 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.staticfiles',
     'djcelery',
+    # mohit741
+    'django_crontab',
+    'messages_extends',
 
     # Common Initialization
     'openedx.core.djangoapps.common_initialization.apps.CommonInitializationConfig',
@@ -2503,6 +2512,7 @@ INSTALLED_APPS = [
 
     # so sample_task is available to celery workers
     'openedx.core.djangoapps.heartbeat',
+    
 ]
 
 ######################### CSRF #########################################

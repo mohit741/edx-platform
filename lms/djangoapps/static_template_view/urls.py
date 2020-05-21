@@ -4,9 +4,10 @@ URLs for static_template_view app
 
 
 from django.conf import settings
-from django.conf.urls import url
+from django.conf.urls import url, include
 
 from static_template_view import views
+from branding.views import Handle_Post, Notification_Post
 
 urlpatterns = [
     # Semi-static views (these need to be rendered and have the login bar, but don't change)
@@ -15,7 +16,11 @@ urlpatterns = [
     url(r'^404$', views.render_404, name='static_template_view.views.render_404'),
     url(r'^500$', views.render_500, name='static_template_view.views.render_500'),
 
-    url(r'^blog$', views.render, {'template': 'blog.html'}, name="blog"),
+    # Blog Posts and notifications handling in single url and view -mohit741
+    url(r'^blog$', Handle_Post.as_view(), name="blog"),
+    url(r'^notifications$', Notification_Post.as_view(), name="notify"),
+    url(r'^messages/', include('messages_extends.urls')),
+
     url(r'^contact$', views.render, {'template': 'contact.html'}, name="contact"),
     url(r'^donate$', views.render, {'template': 'donate.html'}, name="donate"),
     url(r'^faq$', views.render, {'template': 'faq.html'}, name="faq"),
