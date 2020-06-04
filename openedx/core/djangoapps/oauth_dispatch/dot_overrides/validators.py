@@ -3,6 +3,7 @@ Classes that override default django-oauth-toolkit behavior
 """
 from __future__ import absolute_import, unicode_literals
 
+import logging
 from datetime import datetime, timedelta
 
 from django.contrib.auth import authenticate, get_user_model
@@ -15,6 +16,8 @@ from pytz import utc
 
 from ..models import RestrictedApplication
 
+
+log = logging.getLogger(__name__)
 
 @receiver(pre_save, sender=AccessToken)
 def on_access_token_presave(sender, instance, *args, **kwargs):  # pylint: disable=unused-argument
@@ -38,7 +41,9 @@ class EdxOAuth2Validator(OAuth2Validator):
         Authenticate users, but allow inactive users (with u.is_active == False)
         to authenticate.
         """
+        log.info('------------------Username Password---------------------,%s %s', username, password)
         user = self._authenticate(username=username, password=password)
+        log.info('------------------User auth---------------------,%s %s', user)
         if user is not None:
             request.user = user
             return True
@@ -79,6 +84,7 @@ class EdxOAuth2Validator(OAuth2Validator):
             # Ensure the tokens get associated with the correct user since DOT does not normally
             # associate access tokens issued with the client_credentials grant to users.
             request.user = request.client.user
+            log.info('------------------user @cliet credentials---------------------,%s %s', request.user)
 
         super(EdxOAuth2Validator, self).save_bearer_token(token, request, *args, **kwargs)
 

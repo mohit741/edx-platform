@@ -84,7 +84,7 @@ CONFIG_PREFIX = SERVICE_VARIANT + "." if SERVICE_VARIANT else ""
 
 ################################ ALWAYS THE SAME ##############################
 
-DEBUG = False
+# DEBUG = True
 DEFAULT_TEMPLATE_ENGINE['OPTIONS']['debug'] = False
 
 EMAIL_BACKEND = 'django_ses.SESBackend'

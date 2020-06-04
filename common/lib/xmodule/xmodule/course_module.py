@@ -323,6 +323,21 @@ class CourseFields(object):
         help=_("Date that certificates become available to learners"),
         scope=Scope.content
     )
+    # Added more course filter fields -mohit741
+    subject = String(
+        display_name=_("Subject"),
+        help=_(
+            "Enter the subject."
+        ),
+        scope=Scope.settings, default=''
+    )
+    program = String(
+        display_name=_("Program"),
+        help=_(
+            "Enter the program."
+        ),
+        scope=Scope.settings, default=''
+    )
     cosmetic_display_price = Integer(
         display_name=_("Cosmetic Course Display Price"),
         help=_(

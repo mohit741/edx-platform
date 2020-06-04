@@ -105,7 +105,8 @@ def _create_jwt(
             ENFORCE_JWT_SCOPES is enabled and the OAuth client is restricted.
         secret (string): Overrides configured JWT secret (signing) key.
     """
-    use_asymmetric_key = _get_use_asymmetric_key_value(is_restricted, use_asymmetric_key)
+    # TODO -mohit741 use_asymmetric_key = _get_use_asymmetric_key_value(is_restricted, use_asymmetric_key)
+    use_asymmetric_key = None
     # Default scopes should only contain non-privileged data.
     # Do not be misled by the fact that `email` and `profile` are default scopes. They
     # were included for legacy compatibility, even though they contain privileged data.

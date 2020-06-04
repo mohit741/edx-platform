@@ -6,7 +6,7 @@ django-oauth-toolkit as appropriate.
 from __future__ import absolute_import, unicode_literals
 
 import json
-
+import logging
 from django.conf import settings
 from django.views.generic import View
 from edx_django_utils import monitoring as monitoring_utils
@@ -21,6 +21,7 @@ from openedx.core.djangoapps.oauth_dispatch import adapters
 from openedx.core.djangoapps.oauth_dispatch.dot_overrides import views as dot_overrides_views
 from openedx.core.djangoapps.oauth_dispatch.jwt import create_jwt_from_token
 
+log = logging.getLogger(__name__)
 
 class _DispatchingView(View):
     """
@@ -38,12 +39,14 @@ class _DispatchingView(View):
         """
         client_id = self._get_client_id(request)
         monitoring_utils.set_custom_metric('oauth_client_id', client_id)
-
+        log.info('--------------client_id------------------%s',client_id)
         if dot_models.Application.objects.filter(client_id=client_id).exists():
             monitoring_utils.set_custom_metric('oauth_adapter', 'dot')
+            log.info('--------------DOT------------------')
             return self.dot_adapter
         else:
             monitoring_utils.set_custom_metric('oauth_adapter', 'dop')
+            log.info('--------------DOP------------------')
             return self.dop_adapter
 
     def dispatch(self, request, *args, **kwargs):
@@ -69,8 +72,10 @@ class _DispatchingView(View):
         Return the appropriate view from the requested backend.
         """
         if backend == self.dot_adapter.backend:
+            log.info('--------------DOT view------------------')
             return self.dot_view.as_view()
         elif backend == self.dop_adapter.backend:
+            log.info('--------------DOP view------------------')
             return self.dop_view.as_view()
         else:
             raise KeyError('Failed to dispatch view. Invalid backend {}'.format(backend))
@@ -103,10 +108,10 @@ class AccessTokenView(RatelimitMixin, _DispatchingView):
                                       request.META.get('HTTP_X_TOKEN_TYPE', 'no_token_type_supplied')).lower()
         monitoring_utils.set_custom_metric('oauth_token_type', token_type)
         monitoring_utils.set_custom_metric('oauth_grant_type', request.POST.get('grant_type', ''))
-
+        
         if response.status_code == 200 and token_type == 'jwt':
             response.content = self._build_jwt_response_from_access_token_response(request, response)
-
+        log.info('----------------------------Response-----------------------%s : %s',token_type, str(response))
         return response
 
     def _build_jwt_response_from_access_token_response(self, request, response):

@@ -66,6 +66,14 @@ class CourseOverview(TimeStampedModel):
     display_number_with_default = TextField()
     display_org_with_default = TextField()
 
+    # Prices -mohit741
+    general_price = TextField(null=True)
+    inr_price = TextField(null=True)
+
+    # For course filtering -mohit741
+    subject = TextField(null=True)
+    program = TextField(null=True)
+
     # Start/end dates
     start = DateTimeField(null=True)
     end = DateTimeField(null=True)
@@ -131,6 +139,7 @@ class CourseOverview(TimeStampedModel):
         """
         from lms.djangoapps.certificates.api import get_active_web_certificate
         from openedx.core.lib.courses import course_image_url
+        from lms.djangoapps.commerce.utils import get_prices
 
         # Workaround for a problem discovered in https://openedx.atlassian.net/browse/TNL-2806.
         # If the course has a malformed grading policy such that
@@ -145,6 +154,7 @@ class CourseOverview(TimeStampedModel):
         display_name = course.display_name
         start = course.start
         end = course.end
+        prices = get_prices(course.id)
         max_student_enrollments_allowed = course.max_student_enrollments_allowed
         if isinstance(course.id, CCXLocator):
             from lms.djangoapps.ccx.utils import get_ccx_from_ccx_locator
@@ -169,6 +179,17 @@ class CourseOverview(TimeStampedModel):
         course_overview.display_name = display_name
         course_overview.display_number_with_default = course.display_number_with_default
         course_overview.display_org_with_default = course.display_org_with_default
+
+        # Course prices -mohit741
+        if len(prices) > 1:
+            course_overview.inr_price = prices[0]
+            course_overview.general_price = prices[1]
+        else:
+            course_overview.general_price = prices[0]
+
+        # Update course subject and program -mohit741
+        course_overview.subject = course.subject
+        course_overview.program = course.program
 
         course_overview.start = start
         course_overview.end = end

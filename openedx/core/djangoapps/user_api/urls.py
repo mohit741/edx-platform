@@ -16,7 +16,8 @@ from .accounts.views import (
     AccountViewSet,
     DeactivateLogoutView,
     LMSAccountRetirementView,
-    UsernameReplacementView
+    UsernameReplacementView,
+    AccessTokenView
 )
 from .preferences.views import PreferencesDetailView, PreferencesView
 from .verification_api.views import IDVerificationStatusView
@@ -72,6 +73,11 @@ RETIREMENT_LMS_POST = LMSAccountRetirementView.as_view({
 })
 
 urlpatterns = [
+    url(
+        r'^v1/oauth2_token',
+        AccessTokenView.as_view(),
+        name='oauth2_token'
+    ),
     url(
         r'^v1/me$',
         ME,

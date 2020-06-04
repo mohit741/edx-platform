@@ -24,6 +24,16 @@ from .models import CommerceConfiguration
 
 log = logging.getLogger(__name__)
 
+# Wrapper method to get course prices in both inr and usd -mohit741
+def get_prices(course_id):
+    modes = CourseMode.paid_modes_for_course(course_id)
+    prices = []
+    if len(modes) > 1:
+        prices.append(str(modes[0].min_price))
+        prices.append(str(modes[1].min_price))
+    else:
+        prices.append(str(modes[0].min_price))
+    return prices
 
 def is_account_activation_requirement_disabled():
     """

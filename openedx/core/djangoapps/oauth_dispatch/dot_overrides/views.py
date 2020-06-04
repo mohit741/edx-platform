@@ -3,6 +3,7 @@ Classes that override default django-oauth-toolkit behavior
 """
 from __future__ import absolute_import, unicode_literals
 
+import logging
 from oauth2_provider.exceptions import OAuthToolkitError
 from oauth2_provider.http import HttpResponseUriRedirect
 from oauth2_provider.models import get_access_token_model, get_application_model
@@ -12,6 +13,7 @@ from oauth2_provider.views import AuthorizationView
 
 from openedx.core.djangoapps.oauth_dispatch.models import ApplicationOrganization
 
+log = logging.getLogger(__name__)
 
 # TODO (ARCH-83) remove once we have full support of OAuth Scopes
 class EdxOAuth2AuthorizationView(AuthorizationView):
@@ -27,6 +29,7 @@ class EdxOAuth2AuthorizationView(AuthorizationView):
     def get(self, request, *args, **kwargs):
         # Note: This code is copied from https://github.com/evonove/django-oauth-toolkit/blob/34f3b7b3511c15686039079026165feaadb1b87d/oauth2_provider/views/base.py#L111
         # Places that we have changed are noted with ***.
+        log.info('------------------------User in override------------------%s',request.user)
         application = None
         try:
             # *** Moved code to get the require_approval value earlier on so we can
@@ -36,6 +39,7 @@ class EdxOAuth2AuthorizationView(AuthorizationView):
                 "approval_prompt",
                 oauth2_settings.REQUEST_APPROVAL_PROMPT,
             )
+            log.info('----------------------require_approval------------------------%s',require_approval)
             if require_approval != 'auto_even_if_expired':
                 return super(EdxOAuth2AuthorizationView, self).get(request, *args, **kwargs)
 
@@ -61,7 +65,7 @@ class EdxOAuth2AuthorizationView(AuthorizationView):
             # following two loc are here only because of https://code.djangoproject.com/ticket/17795
             form = self.get_form(self.get_form_class())
             kwargs['form'] = form
-
+            log.info('-----------------------------kwargs---------------------------%s',kwargs)
             # If skip_authorization field is True, skip the authorization screen even
             # if this is the first use of the application and there was no previous authorization.
             # This is useful for in-house applications-> assume an in-house applications

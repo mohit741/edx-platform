@@ -57,6 +57,11 @@ from xmodule.modulestore.modulestore_settings import update_module_store_setting
 from xmodule.modulestore.edit_info import EditInfoMixin
 from lms.djangoapps.lms_xblock.mixin import LmsBlockMixin
 
+# cron_tab settings -mohit741
+CRONJOBS = [
+    ('*/5 * * * *', 'branding.cron.delete_task', '>> /edx/var/log/cron_job.log')
+]
+
 ################################### FEATURES ###################################
 # The display name of the platform to be used in templates/emails/etc.
 PLATFORM_NAME = _('Your Platform Name Here')
@@ -2209,6 +2214,7 @@ YOUTUBE = {
 }
 YOUTUBE_API_KEY = 'PUT_YOUR_API_KEY_HERE'
 
+MESSAGE_STORAGE = 'messages_extends.storages.FallbackStorage'
 ################################### APPS ######################################
 
 # The order of INSTALLED_APPS is important, when adding new apps here
@@ -2225,6 +2231,10 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.staticfiles',
     'djcelery',
+
+    # mohit741
+    'django_crontab',
+    'messages_extends',
 
     # Common Initialization
     'openedx.core.djangoapps.common_initialization.apps.CommonInitializationConfig',

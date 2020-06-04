@@ -2,7 +2,6 @@
 Defines the shoppingcart URLs
 """
 
-from __future__ import absolute_import
 
 from django.conf import settings
 from django.conf.urls import url
@@ -20,7 +19,10 @@ urlpatterns = [
     # These following URLs are only valid if the ENABLE_SHOPPING_CART feature flag is set
     url(r'^$', views.show_cart, name='shoppingcart.views.show_cart'),
     url(r'^clear/$', views.clear_cart, name='shoppingcart.views.clear_cart'),
+    url(r'^clear_ajax/$', views.clear_cart_ajax, name='shoppingcart.views.clear_cart_ajax'),
     url(r'^remove_item/$', views.remove_item, name='shoppingcart.views.remove_item'),
+    url(r'^remove_item_ajax/$', views.remove_item_ajax, name='shoppingcart.views.remove_item_ajax'),
+    url(r'^count/$', views.items_count, name='items_count'),
     url(r'^add/course/{}/$'.format(settings.COURSE_ID_PATTERN), views.add_course_to_cart, name='add_course_to_cart'),
     url(r'^register/redeem/(?P<registration_code>[0-9A-Za-z]+)/$',
         views.register_code_redemption, name='register_code_redemption'),

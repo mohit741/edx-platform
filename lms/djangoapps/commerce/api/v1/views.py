@@ -30,8 +30,9 @@ log = logging.getLogger(__name__)
 
 class CourseListView(ListAPIView):
     """ List courses and modes. """
-    authentication_classes = (JwtAuthentication, OAuth2Authentication, SessionAuthentication,)
-    permission_classes = (IsAuthenticated,)
+    # authentication_classes = (JwtAuthentication, OAuth2Authentication, SessionAuthentication,)
+    #authentication_classes = (OAuth2Authentication, SessionAuthentication,)
+    #permission_classes = (IsAuthenticated,)
     serializer_class = CourseSerializer
     pagination_class = None
 
@@ -44,8 +45,9 @@ class CourseRetrieveUpdateView(PutAsCreateMixin, RetrieveUpdateAPIView):
     lookup_field = 'id'
     lookup_url_kwarg = 'course_id'
     model = CourseMode
-    authentication_classes = (JwtAuthentication, OAuth2Authentication, SessionAuthentication,)
-    permission_classes = (ApiKeyOrModelPermission,)
+    #authentication_classes = (JwtAuthentication, OAuth2Authentication, SessionAuthentication,)
+    #authentication_classes = (OAuth2Authentication, SessionAuthentication,)
+    #permission_classes = (ApiKeyOrModelPermission,)
     serializer_class = CourseSerializer
 
     # Django Rest Framework v3 requires that we provide a queryset.
@@ -71,8 +73,9 @@ class CourseRetrieveUpdateView(PutAsCreateMixin, RetrieveUpdateAPIView):
 class OrderView(APIView):
     """ Retrieve order details. """
 
-    authentication_classes = (JwtAuthentication, SessionAuthentication,)
-    permission_classes = (IsAuthenticatedOrActivationOverridden,)
+    # authentication_classes = (JwtAuthentication, SessionAuthentication,)
+    #authentication_classes = (OAuth2Authentication, SessionAuthentication,)
+    #permission_classes = (IsAuthenticatedOrActivationOverridden,)
 
     def get(self, request, number):
         """ HTTP handler. """

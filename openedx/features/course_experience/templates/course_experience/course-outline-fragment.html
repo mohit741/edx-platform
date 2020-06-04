@@ -17,6 +17,58 @@ from openedx.core.djangolib.markup import HTML, Text
 course_sections = blocks.get('children')
 self_paced = context.get('self_paced', False)
 %>
+<script type="text/javascript">
+var srcs = {};
+$(document).ready(function(){
+    % for src in video_srcs:
+	try{
+	$("#${ video_srcs[src]['block_id'] }-iframe")[0].children[0].height = 530;
+	$("#${ video_srcs[src]['block_id'] }-iframe")[0].children[0].width = 600;
+	// Remove this code when autoplaying stops -mohit741
+	srcs["#${ video_srcs[src]['block_id'] }-iframe"] = $("#${ video_srcs[src]['block_id'] }-iframe")[0].children[0].src;
+	$("#${ video_srcs[src]['block_id'] }-iframe")[0].children[0].src = "/";
+	$("#${ video_srcs[src]['block_id'] }").unbind("click").bind('click', function(e) {
+		e.preventDefault();
+		$("#${ video_srcs[src]['block_id'] }-iframe")[0].children[0].src = srcs["#${ video_srcs[src]['block_id'] }-iframe"];
+
+	});
+        $("#${ video_srcs[src]['block_id'] }-iframe").on($.modal.BEFORE_OPEN, function(event, modal) {
+  		$(".loader").show();
+		setTimeout(function(){ $(".loader").hide(); }, 4000);
+	});
+	$("#${ video_srcs[src]['block_id'] }-iframe").on($.modal.BEFORE_CLOSE, function(event, modal) {
+  		$("#${ video_srcs[src]['block_id'] }-iframe")[0].children[0].src = "/";
+	});
+	} catch(err){console.log(err);}
+    % endfor
+});
+</script>
+<!-- Refactor this code to css file. Close button for sample videos modal -->
+<style>
+.modal {
+z-index: 1500 !important;
+width: 600px !important;
+height: 530px !important;
+max-width: 800px !important;
+top: 10% !important;
+left: 30% !important;
+background: black;
+}
+.modal a.close-modal {
+    position: absolute !important;
+    top: 3px !important;
+    right: 3px  !important;
+    display: block !important;
+    width: 40px !important;
+    height: 40px !important;
+    text-indent: -9999px !important;
+    background: black !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center center  !important;
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAAXNSR0IArs4c6QAAA3hJREFUaAXlm8+K00Acx7MiCIJH/yw+gA9g25O49SL4AO3Bp1jw5NvktC+wF88qevK4BU97EmzxUBCEolK/n5gp3W6TTJPfpNPNF37MNsl85/vN/DaTmU6PknC4K+pniqeKJ3k8UnkvDxXJzzy+q/yaxxeVHxW/FNHjgRSeKt4rFoplzaAuHHDBGR2eS9G54reirsmienDCTRt7xwsp+KAoEmt9nLaGitZxrBbPFNaGfPloGw2t4JVamSt8xYW6Dg1oCYo3Yv+rCGViV160oMkcd8SYKnYV1Nb1aEOjCe6L5ZOiLfF120EjWhuBu3YIZt1NQmujnk5F4MgOpURzLfAwOBSTmzp3fpDxuI/pabxpqOoz2r2HLAb0GMbZKlNV5/Hg9XJypguryA7lPF5KMdTZQzHjqxNPhWhzIuAruOl1eNqKEx1tSh5rfbxdw7mOxCq4qS68ZTjKS1YVvilu559vWvFHhh4rZrdyZ69Vmpgdj8fJbDZLJpNJ0uv1cnr/gjrUhQMuI+ANjyuwftQ0bbL6Erp0mM/ny8Fg4M3LtdRxgMtKl3jwmIHVxYXChFy94/Rmpa/pTbNUhstKV+4Rr8lLQ9KlUvJKLyG8yvQ2s9SBy1Jb7jV5a0yapfF6apaZLjLLcWtd4sNrmJUMHyM+1xibTjH82Zh01TNlhsrOhdKTe00uAzZQmN6+KW+sDa/JD2PSVQ873m29yf+1Q9VDzfEYlHi1G5LKBBWZbtEsHbFwb1oYDwr1ZiF/2bnCSg1OBE/pfr9/bWx26UxJL3ONPISOLKUvQza0LZUxSKyjpdTGa/vDEr25rddbMM0Q3O6Lx3rqFvU+x6UrRKQY7tyrZecmD9FODy8uLizTmilwNj0kraNcAJhOp5aGVwsAGD5VmJBrWWbJSgWT9zrzWepQF47RaGSiKfeGx6Szi3gzmX/HHbihwBser4B9UJYpFBNX4R6vTn3VQnez0SymnrHQMsRYGTr1dSk34ljRqS/EMd2pLQ8YBp3a1PLfcqCpo8gtHkZFHKkTX6fs3MY0blKnth66rKCnU0VRGu37ONrQaA4eZDFtWAu2fXj9zjFkxTBOo8F7t926gTp/83Kyzzcy2kZD6xiqxTYnHLRFm3vHiRSwNSjkz3hoIzo8lCKWUlg/YtGs7tObunDAZfpDLbfEI15zsEIY3U/x/gHHc/G1zltnAgAAAABJRU5ErkJggg==')  !important;
+}
+</style>
 <main role="main" class="course-outline" id="main" tabindex="-1">
     % if course_sections is not None:
         <button class="btn btn-primary"
@@ -162,24 +214,38 @@ self_paced = context.get('self_paced', False)
                     % for vertical in subsection.get('children', []):
                         <%
                         vertical_is_access_denied = vertical.get('authorization_denial_reason')
-                        if vertical_is_access_denied:
-                            continue
+                        ## if vertical_is_access_denied:
+                        ##    continue
                         scored = 'scored' if vertical.get('scored', False) else ''
                         access_restricted = list(vertical.get('all_denial_reasons', []))
                         %>
                                     <li class="vertical outline-item focusable ${scored}" data-access-denied="${json.dumps(access_restricted)}">
-                                        <a class="outline-item focusable"
-                                            % if enable_links:
-                                                href="${ vertical['lms_web_url'] }"
+                                            % if vertical['id'] in video_srcs:                                        
+						<a class="outline-item focusable" id="${ video_srcs[vertical['id']]['block_id'] }" href="#${ video_srcs[vertical['id']]['block_id'] }-iframe" rel="modal:open"  style="color:blue;">
+                                                <div id="${ video_srcs[vertical['id']]['block_id'] }-iframe" class="modal">
+						${video_srcs[vertical['id']]['src'] | n}
+						<div class="loader dark" style="display:none;"></div>
+						<div class="modal-title">${ vertical['display_name'] }</div>
+						</div>
+					    <div class="vertical-details">
+                                              <div class="vertical-title">
+                                                ${ vertical['display_name'] } (Preview Available)
+                                              </div>
+                                            </div>
                                             % else:
+                                        	<a class="outline-item focusable"
+                                                % if enable_links:
+                                                href="${ vertical['lms_web_url'] }"
+                                                % else:
                                                 aria-disabled="true"
-                                            % endif
-                                            id="${ vertical['id'] }">
+                                                % endif
+                                                id="${ vertical['id'] }">
                                             <div class="vertical-details">
                                               <div class="vertical-title">
                                                 ${ vertical['display_name'] }
                                               </div>
                                             </div>
+                                            % endif
                         % if vertical.get('complete'):
                                                 <span class="complete-checkmark fa fa-check" aria-hidden="true"></span>
                                                 <span class="sr">${_("Completed")}</span>

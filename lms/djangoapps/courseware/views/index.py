@@ -137,6 +137,7 @@ class CoursewareIndex(View):
                     depth=CONTENT_DEPTH,
                     check_if_enrolled=not self.enable_unenrolled_access,
                 )
+                log.info('------------------------self.course-----------------------%s',self.course)
                 self.course_overview = CourseOverview.get_from_id(self.course.id)
 
                 if self.enable_unenrolled_access:
@@ -184,9 +185,10 @@ class CoursewareIndex(View):
         """
         Render the index page.
         """
+        log.info('------------------------------course at render----------------------------- %s',self.course)
         self._redirect_if_needed_to_pay_for_course()
         self._prefetch_and_bind_course(request)
-
+        log.info('------------------------------course at render----------------------------- %s',self.course)
         if self.course.has_children_at_depth(CONTENT_DEPTH):
             self._reset_section_to_exam_if_required()
             self.chapter = self._find_chapter()
