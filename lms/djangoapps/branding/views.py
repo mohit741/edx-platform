@@ -3,20 +3,35 @@
 import logging
 
 import six
+import threading
+from pytz import timezone
+from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache
 from django.db import transaction
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 from django.utils import translation
 from django.utils.translation.trans_real import get_supported_language_variant
 from django.views.decorators.cache import cache_control
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.utils.text import slugify
+from django.contrib.auth.models import User
+
+from django.contrib import messages
+from messages_extends import constants as constants_messages
+from messages_extends.models import Message
+
+from haystack.forms import ModelSearchForm
+from haystack.query import EmptySearchQuerySet
 
 import branding.api as branding_api
+from branding.models import BlogPost
 import lms.djangoapps.courseware.views.views as courseware_views
 import student.views
 from edxmako.shortcuts import marketing_link, render_to_response
@@ -34,7 +49,7 @@ log = logging.getLogger(__name__)
 def index(request):
     """
     Redirects to main page -- info page if user authenticated, or marketing if not
-    """
+    
     if request.user.is_authenticated:
         # Only redirect to dashboard if user has
         # courses in his/her dashboard. Otherwise UX is a bit cryptic.
@@ -44,7 +59,7 @@ def index(request):
                 'ALWAYS_REDIRECT_HOMEPAGE_TO_DASHBOARD_FOR_AUTHENTICATED_USER',
                 settings.FEATURES.get('ALWAYS_REDIRECT_HOMEPAGE_TO_DASHBOARD_FOR_AUTHENTICATED_USER', True)):
             return redirect('dashboard')
-
+    """
     enable_mktg_site = configuration_helpers.get_value(
         'ENABLE_MKTG_SITE',
         settings.FEATURES.get('ENABLE_MKTG_SITE', False)
@@ -102,6 +117,159 @@ def courses(request):
     #  we do not expect this case to be reached in cases where
     #  marketing is enabled or the courses are not browsable
     return courseware_views.courses(request)
+
+# Adding views for Blog -mohit741
+@method_decorator(csrf_exempt, name='dispatch')
+class Handle_Post(View):
+
+    def post(self, request):
+        slug = request.POST.get('slug')
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        edit = request.POST.get('edit')
+        if edit is not None:
+            old_post = BlogPost.objects.filter(slug=slug)
+            if old_post.exists():
+                _post = old_post.first()
+                try:
+                    _post.title = title
+                    _post.content = content
+                    _post.slug = slugify(title, allow_unicode=True)
+                    _post.save()
+                    return JsonResponse({'slug':slug})
+                except Exception as e:
+                    return HttpResponse(status=400)
+        slug = slugify(title, allow_unicode=True)
+        user = request.user
+        try:
+            new_post = BlogPost(title=title,content=content,author=user,slug=slug)
+            new_post.save()
+            notif_msg = '<a style=\"color:#4e94ee;\"href=\"'+reverse('blog')+'?slug='+slug+'\">New Blog Post: '+title+'</a>'
+            users = User.objects.all()
+            expires = datetime.now() + timedelta(days=7)
+            for _user in users:
+                if not _user.is_anonymous:
+                    messages.add_message(request, constants_messages.INFO_PERSISTENT, notif_msg, user=_user, expires=expires)
+        except Exception as e:
+            log.info('+++++++++++++++++++++++++==Messages Error+++++++++++++++++++++++++++++ %s', str(e))
+            return HttpResponse(status=400)
+        return HttpResponse(status=201)
+
+
+    def get(self, request):
+        slug = request.GET.get('slug')
+        IST = timezone('Asia/Kolkata')
+        FMT = '%d/%m/%Y %H:%M:%S'
+        if slug is not None:
+            try:
+                post = BlogPost.objects.get(slug=slug)
+            except BlogPost.DoesNotExist:
+                raise Http404
+            post_data = {
+                'title': post.title, 
+                'content': post.content, 
+                'created': post.updated_on.astimezone(IST).strftime(FMT)+' (edited)' if post.updated_on > post.created_on else post.created_on.astimezone(IST).strftime(FMT),
+                'author': post.author.username,
+                'slug': post.slug
+            }
+            log.info('+++++++++++++++++++++++++ Time +++++++++++++++++++++++++++++ %s', str((post.updated_on - post.created_on).seconds))
+            return render_to_response('blog_detail.html', {'post':post_data})
+        posts = BlogPost.objects.all()
+        resp = [{
+            'title': post.title, 
+            'content': post.content if len(post.content) < 200 else post.content[:197] + '...', 
+            'author': post.author.username, 
+            'created': post.updated_on.astimezone(IST).strftime(FMT)+' (edited)' if post.updated_on > post.created_on else post.created_on.astimezone(IST).strftime(FMT),
+            'slug': post.slug
+        } for post in posts]
+        return render_to_response('blog.html', {'post_list':resp})
+
+    def delete(self, request, *args, **kwargs):
+        slug = request.GET.get('slug')
+        try:
+            old_post = BlogPost.objects.filter(slug=slug)
+            if old_post.exists():
+                old_post.first().delete()
+                return HttpResponse(status=200)
+        except BlogPost.DoesNotExist:
+            pass
+        return HttpResponse(status=404)
+
+# Adding views for notifications -mohit741
+@method_decorator(csrf_exempt, name='dispatch')
+class Notification_Post(View):
+
+    def post(self, request):
+        hours = int(request.POST.get('hours', 1))
+        content = request.POST.get('content')
+        days = int(request.POST.get('days', 0))
+        try:
+            td = timedelta(days=days) if days != 0 else timedelta(hours=hours)
+            expires = datetime.now() + td
+            users = User.objects.all()
+            for _user in users:
+                if not _user.is_anonymous:
+                    messages.add_message(request, constants_messages.INFO_PERSISTENT, content, user=_user, expires=expires)
+        except Exception as e:
+            log.info('+++++++++++++++++++++++++++ Messages Error +++++++++++++++++++++++++++++ %s', str(e))
+            return HttpResponse(status=400)
+        return HttpResponse(status=201)
+
+
+    def get(self, request):
+        all_msgs = Message.objects.filter(user=request.user)
+        return render_to_response('notifications.html', {'messages':all_msgs})
+
+    # Async delete for notifications as to not block main thread
+    def delete(self, request, *args, **kwargs):
+        try:
+            pk = request.GET.get('pk')
+            t = threading.Thread(target=delete_notif,args=[pk])
+            t.setDaemon(True)
+            t.start()
+            return HttpResponse(status=200)
+        except Exception as e:
+            log.info('+++++++++++++++++++++++++++ Messages Deletion Thread Error +++++++++++++++++++++++++++++ %s', str(e))
+        return HttpResponse(status=400)
+
+# Async delete target
+def delete_notif(pk):
+    try:
+        msg = Message.objects.get(pk=pk)
+        all_msgs = Message.objects.all()
+        for _msg in all_msgs:
+            if msg == _msg and msg.pk != _msg.pk:
+                _msg.delete() 
+        msg.delete()    
+    except Exception as e:
+        log.info('+++++++++++++++++++++++++++ Messages Deletion Error +++++++++++++++++++++++++++++ %s', str(e))
+
+# TODO Blogs Search API -mohit741
+class BlogSearchView(View):
+    # If GET, then only process
+    def get(self, request):
+        query = ""
+        load_all=True
+        results = EmptySearchQuerySet()
+        searchqueryset = None
+        form_class = ModelSearchForm
+        if request.GET.get("q"):
+            form = form_class(request.GET, searchqueryset=searchqueryset, load_all=load_all)
+            if form.is_valid():
+                query = form.cleaned_data["q"]
+                results = form.search()
+                if len(results) == 0:
+                    return HttpResponse(status=404)
+                data = list()
+                for x in results:
+                    data.append(
+                        {
+                            'title': x.object.title,
+                            'slug': x.object.slug
+                        }
+                    )
+                return JsonResponse(data)      
+        return HttpResponse(status=404)   
 
 
 def _footer_static_url(request, name):

@@ -1,0 +1,393 @@
+## mako
+<%page expression_filter="h"/>
+<%namespace name='static' file='../static_content.html'/>
+
+<%!
+from django.conf import settings
+from django.urls import reverse
+from django.utils.translation import ugettext as _
+from django.contrib import messages as xmsg
+from django.contrib.auth.models import User
+from messages_extends.models import Message
+%>
+
+<%
+## This template should not use the target student's details when masquerading, see TNL-4895
+if request.user.is_anonymous or request.user is None:
+    messages = Message.objects.filter(user=User.objects.filter(is_staff=True).first())
+else:
+    messages = xmsg.get_messages(request)
+%>
+
+<style>
+@media only screen and (max-width: 1366px)
+{
+  .notify
+  {
+    top: 4.8em;
+  }
+}
+.notify{
+  position: absolute;
+  z-index: 10;
+  cursor: pointer;
+}
+
+.notification_dd{
+  position: absolute;
+  top: 48px;
+  right: -15px;
+  z-index: 11;
+  user-select: none;
+  background: #fff;
+  border: 1px solid #c7d8e2;
+  width: 450px;
+  height: auto;
+  display: none;
+  border-radius: 3px;
+  box-shadow: 10px 10px 35px rgba(0,0,0,0.125),
+              -10px -10px 35px rgba(0,0,0,0.125);
+}
+
+.notification_dd:before{
+    content: "";
+    position: absolute;
+    top: -20px;
+    right: 15px;
+    border: 10px solid;
+    border-color: transparent transparent #fff transparent;
+}
+
+.notification_ul{
+    padding-top:10px;
+    margin-left:-20px;
+}
+.notification_dd li {
+    border-bottom: 1px solid #f1f2f4;
+    padding: 10px 0px;
+    display: flex;
+    align-items: center;
+}
+
+.notification_dd li .notify_icon{
+  display: flex;
+  position: relative;
+}
+
+.notification_dd li .notify_icon .icon{
+  display: inline-block;
+  color: #f25d2fcc;
+}
+
+.notification_dd li .notify_data{
+  margin: 0 15px;
+  width: 90%;
+  font-size: 14px;
+}
+
+.notification_dd li .notify_data .title{
+  color: #000;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.notification_dd li .notify_data .title p{
+  font-family: muli;
+}
+.notification_dd li .notify_data .sub_title{
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 5px;
+}
+
+.notification_dd li .notify_status{
+  margin-left: 0;
+  font-size: 14px;
+  float: right;
+  position: relative;
+  top: -4.5em;
+}
+
+.notification_dd li.show_all{
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.notification_dd li.show_all p{
+  font-weight: 700;
+  color: #3b80f9;
+  cursor: pointer;
+}
+
+.notification_dd li.show_all p:hover{
+  text-decoration: underline;
+}
+.notify.active .icon_wrap{
+  color: #3b80f9;
+}
+
+.notify.active .notification_dd{
+  display: block;
+}
+
+.close.notify{
+  opacity: unset;
+  top: unset !important;
+  right: 1em;
+  margin-top: 2em;
+}
+#notification-count {
+  position: absolute;
+  right: -15px;
+  top: -11px;
+}
+
+#notification-count .badge {
+  text-shadow: none;
+  background-color: #ec5252;
+  border: 2px solid #fff;
+  border-radius: 50% !important;
+  z-index: 1;
+  height: 21px !important;
+  color: white !important;
+  padding: .25em .4em;
+}
+
+p#ncount {
+  all: unset;
+  font-weight: bold !important;
+}
+
+/* BELL */
+
+@-webkit-keyframes ring {
+  0% {
+    -webkit-transform: rotate(-15deg);
+    transform: rotate(-15deg);
+  }
+
+  2% {
+    -webkit-transform: rotate(15deg);
+    transform: rotate(15deg);
+  }
+
+  4% {
+    -webkit-transform: rotate(-18deg);
+    transform: rotate(-18deg);
+  }
+
+  6% {
+    -webkit-transform: rotate(18deg);
+    transform: rotate(18deg);
+  }
+
+  8% {
+    -webkit-transform: rotate(-22deg);
+    transform: rotate(-22deg);
+  }
+
+  10% {
+    -webkit-transform: rotate(22deg);
+    transform: rotate(22deg);
+  }
+
+  12% {
+    -webkit-transform: rotate(-18deg);
+    transform: rotate(-18deg);
+  }
+
+  14% {
+    -webkit-transform: rotate(18deg);
+    transform: rotate(18deg);
+  }
+
+  16% {
+    -webkit-transform: rotate(-12deg);
+    transform: rotate(-12deg);
+  }
+
+  18% {
+    -webkit-transform: rotate(12deg);
+    transform: rotate(12deg);
+  }
+
+  20% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes ring {
+  0% {
+    -webkit-transform: rotate(-15deg);
+    -ms-transform: rotate(-15deg);
+    transform: rotate(-15deg);
+  }
+
+  2% {
+    -webkit-transform: rotate(15deg);
+    -ms-transform: rotate(15deg);
+    transform: rotate(15deg);
+  }
+
+  4% {
+    -webkit-transform: rotate(-18deg);
+    -ms-transform: rotate(-18deg);
+    transform: rotate(-18deg);
+  }
+
+  6% {
+    -webkit-transform: rotate(18deg);
+    -ms-transform: rotate(18deg);
+    transform: rotate(18deg);
+  }
+
+  8% {
+    -webkit-transform: rotate(-22deg);
+    -ms-transform: rotate(-22deg);
+    transform: rotate(-22deg);
+  }
+
+  10% {
+    -webkit-transform: rotate(22deg);
+    -ms-transform: rotate(22deg);
+    transform: rotate(22deg);
+  }
+
+  12% {
+    -webkit-transform: rotate(-18deg);
+    -ms-transform: rotate(-18deg);
+    transform: rotate(-18deg);
+  }
+
+  14% {
+    -webkit-transform: rotate(18deg);
+    -ms-transform: rotate(18deg);
+    transform: rotate(18deg);
+  }
+
+  16% {
+    -webkit-transform: rotate(-12deg);
+    -ms-transform: rotate(-12deg);
+    transform: rotate(-12deg);
+  }
+
+  18% {
+    -webkit-transform: rotate(12deg);
+    -ms-transform: rotate(12deg);
+    transform: rotate(12deg);
+  }
+
+  20% {
+    -webkit-transform: rotate(0deg);
+    -ms-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+}
+
+.faa-ring.animated,
+.faa-ring.animated-hover:hover,
+.faa-parent.animated-hover:hover > .faa-ring {
+  -webkit-animation: ring 2s ease infinite;
+  animation: ring 2s ease infinite;
+  transform-origin-x: 50%;
+  transform-origin-y: 0px;
+  transform-origin-z: initial;
+}
+
+@media only screen and (min-width: 1370px)
+{
+}
+</style>
+<script type="text/javascript">
+$(document).ready(function(){
+        var notif_count = ${len(messages)};
+  if(notif_count>0){
+    $('.icon_wrap i').addClass('faa-ring animated');
+    $('.icon_wrap a').append("<div id=\"notification-count\" class=\"b\"><span class=\"badge\"><p id=\"ncount\">"+notif_count+"</p></span></div>");
+  }
+  else{
+    $('.notification_dd').remove();
+% if request.user.is_staff:
+    $('.icon_wrap a').attr("href","${ reverse('notify') }");
+% endif
+  }
+
+  $(".notify .icon_wrap").click(function(e){
+    if(notif_count<=0) return;
+      $(this).parent().toggleClass("active");
+    $('.icon_wrap i').toggleClass('faa-ring animated');
+    e.preventDefault();
+  });
+  
+  $('.close.notify').click(function(e){
+        $(this).parent().parent().hide();
+% if request.user.is_anonymous or request.user is None:
+        return;
+% endif
+    $.ajax({
+      url: $(this).attr('close-href'),  // URL
+    method: "POST",            
+      success: function (data) {      // If 200 OK
+      notif_count-=1;
+      if(notif_count<=0){
+        $('.notification_dd').remove();
+        $('#notification-count').hide(); 
+      }
+      else $('#ncount').text(notif_count);                
+      },
+      error: function (xhr, text, error) {            // If 40x or 50x; errors
+            alert('Error: ' + error);
+      }
+    });
+    e.preventDefault();
+
+  });
+});
+</script>
+<div class="nav-item hidden-mobile" style="padding-left:10px; padding-right: 10px;">
+ <div class="notify">
+        <div class="icon_wrap"><a><i class="fa fa-bell" style="font-size:x-large;" ></i>
+  </a></div>
+        <div class="notification_dd" role="menu">
+            <ul class="notification_ul">
+% for message in messages:
+                <li class="${ message.tags } success">
+                    <div class="notify_icon">
+                        <span class="icon"><i class="fa fa-bell faa-ring animated fa-2x"></i></span>  
+                    </div>
+                    <div class="notify_data">
+                        <div class="title">
+                           ${ str(message) | n }  
+                        </div>
+                        <!-- <div class="sub_title">
+                          subtitle goes here
+                        </div> -->
+                    </div>
+                  <div class="notify_status">
+      <a title="Mark as read" class="close notify" close-href=
+>
+			<i class="fa fa-times" style="font-size:x-large; color:red; -webkit-text-stroke: 2px white;"></i>
+		  </a>
+                  </div>
+                </li> 
+% endfor 
+% if request.user.is_staff:
+                <li class="success">
+                    <div class="notify_data">
+                        <div class="title">
+                           <a href="${ reverse('notify') }" style="margin-left: 40%;">All Notifications...</a>  
+                        </div>
+                        <!-- <div class="sub_title">
+                          subtitle goes here
+                        </div> -->
+                    </div>
+                </li> 
+% endif
+            </ul>
+        </div> 
+      </div>
+</div>

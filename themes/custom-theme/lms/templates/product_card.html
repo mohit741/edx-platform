@@ -1,0 +1,128 @@
+<%page args="course" expression_filter="h"/>
+
+<%!
+from django.utils.translation import ugettext as _
+from django.urls import reverse
+from django.conf import settings
+from six import text_type, moves
+from course_modes.models import CourseMode
+from opaque_keys.edx.keys import CourseKey
+from openedx.core.djangolib.markup import clean_dangerous_html, HTML, Text
+from openedx.core.djangolib.js_utils import js_escaped_string
+from lms.djangoapps.courseware.courses import get_course_about_section
+from student.models import CourseEnrollment
+from openedx.features.course_experience import course_home_url_name
+import shoppingcart
+%>
+
+<%
+      if course.start is not None:
+          course_date_string = course.start.strftime('%Y-%m-%dT%H:%M:%S%z')
+      else:
+          course_date_string = ''
+      course_key = CourseKey.from_string(text_type(course.id))
+      if request.user.is_authenticated:
+          enrolled = CourseEnrollment.is_enrolled(request.user, course.id)
+          if not enrolled:
+              cart = shoppingcart.models.Order.get_cart_for_user(request.user)
+              in_cart = shoppingcart.models.PaidCourseRegistration.contained_in_order(cart, course_key) or \
+              shoppingcart.models.CourseRegCodeItem.contained_in_order(cart, course_key)
+
+      reg_then_add_to_cart_link = "{reg_url}?course_id={course_id}&enrollment_action=add_to_cart".format(
+           reg_url=reverse('register_user'), course_id=moves.urllib.parse.quote(str(course.id)))
+
+%>
+<%
+	price = CourseMode.min_course_price_for_verified_for_currency(course.id,settings.PAID_COURSE_REGISTRATION_CURRENCY[0])
+%>
+<script type="text/javascript">
+$(document).ready(function(){
+      add_course_complete_handler_${course.display_number_with_default} = function(jqXHR, textStatus) {
+        if (jqXHR.status == 200) {
+          location.href = "${reverse('shoppingcart.views.show_cart') | n, js_escaped_string}";
+        }
+        if (jqXHR.status == 400) {
+          $("#register_error")
+            .text(jqXHR.responseText ? jqXHR.responseText : "${_("An error occurred. Please try again later.") | n, js_escaped_string}")
+            .css("display", "block");
+        }
+        else if (jqXHR.status == 403) {
+            location.href = "${reg_then_add_to_cart_link | n, js_escaped_string}";
+        }
+      };
+        add_to_cart_post_${course.display_number_with_default} = function(){
+        $.ajax({
+          url: "${reverse('add_course_to_cart', args=[text_type(course.id)]) | n, js_escaped_string}",
+          type: "POST",
+          /* Using `complete` as promise.done did not work on this page */
+          complete: add_course_complete_handler_${course.display_number_with_default}
+         });
+        }
+});
+ $(".popover").hide();
+</script>
+<div id="${course.display_number_with_default}-popover" style="display:none;">
+<div class="container1">
+  <div class="card pop">
+    <div class="card-head pop">
+      <div class="product-detail">
+        <h2>${course.display_name_with_default}</h2> 
+	<!--<h3>Enroll Now!</h3>-->
+      </div>
+      <span class="back-text"></span>
+    </div>
+    <div class="card-body pop">
+      <div class="product-desc">
+        <span class="product-title">
+                <b>${course.display_org_with_default}</b>
+                <span class="badge">
+                  New
+                </span>
+        </span>
+        <span class="product-caption">
+          <div id="${course.display_number_with_default}-sd">
+          ${str(course.short_description) | n}
+        </div>
+        </span>
+       
+       <!-- <span class="product-rating">
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star grey"></i>
+        </span>
+    -->
+      </div>
+      <div class="product-properties">
+       <!-- <span class="product-size">
+                <p><h4>Starts : </h4><time class="localized_datetime" itemprop="startDate" data-format="shortDate" 
+			data-datetime="${course_date_string}" data-language="${LANGUAGE_CODE}"></time></p>
+        </span>
+    -->
+       <!-- <a class="btn product-price" href="${reverse('about_course', args=[text_type(course.id)])}">
+			%if price>0:
+				USD $<b style="padding-left:0px;"> ${price}</b>
+			%else:
+				<b>FREE</b>
+			%endif
+        </a> -->
+      
+      </div>
+    </div>
+    <a class="btn add_to_cart" 
+    % if user.is_authenticated:
+        % if enrolled:
+                    href="${reverse(course_home_url_name(course_key), args=[course.id])}">Enrolled
+        % elif in_cart:
+		    href="${reverse('shoppingcart.views.show_cart')}">Added! Go to Cart
+        % else:
+            onclick="add_to_cart_post_${course.display_number_with_default}();" href="#!">Add to cart
+        % endif
+    % else:
+            onclick="add_to_cart_post_${course.display_number_with_default}();" href="#!">Add to cart
+    % endif
+    </a>
+  </div>
+</div>
+</div>

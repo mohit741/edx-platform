@@ -1434,6 +1434,8 @@ class PaidCourseRegistration(OrderItem):
     course_id = CourseKeyField(max_length=128, db_index=True)
     mode = models.SlugField(default=CourseMode.DEFAULT_SHOPPINGCART_MODE_SLUG)
     course_enrollment = models.ForeignKey(CourseEnrollment, null=True, on_delete=models.CASCADE)
+    # Adding sku to integrate with ecommerce service
+    sku = models.CharField(blank=True, max_length=32, db_index=True)
 
     @classmethod
     def get_self_purchased_seat_count(cls, course_key, status='purchased'):
@@ -1486,7 +1488,7 @@ class PaidCourseRegistration(OrderItem):
     @classmethod
     @transaction.atomic
     def add_to_order(cls, order, course_id, mode_slug=CourseMode.DEFAULT_SHOPPINGCART_MODE_SLUG,
-                     cost=None, currency=None):
+                     cost=None, currency=None, sku=None):
         """
         A standardized way to create these objects, with sensible defaults filled in.
         Will update the cost if called on an order that already carries the course.
@@ -1531,6 +1533,7 @@ class PaidCourseRegistration(OrderItem):
 
         item, __ = cls.objects.get_or_create(order=order, user=order.user, course_id=course_id)
         item.status = order.status
+        item.sku = sku
         item.mode = course_mode.slug
         item.qty = 1
         item.unit_cost = cost

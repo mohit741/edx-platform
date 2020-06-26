@@ -1,0 +1,205 @@
+<%page expression_filter="h"/>
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="main.html" />
+<%namespace name='static' file='static_content.html'/>
+<%!
+from django.urls import reverse
+from django.utils.translation import ugettext as _
+from branding import api as branding_api
+%>
+
+<%block name="pagetitle">${_("Blog")}</%block>
+## <script src="https://cdn.tiny.cloud/1/bx236jwgk2th37ph2n7ky578lqji067s4dkl9mvqim4hew77/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<style>
+    body {
+        font-family: muli;
+        font-size: 18px !important;
+        background-color: #fdfdfd;
+    }
+    a {
+        font-size: 18px;
+    }
+    
+    .head_text {
+        color: white;
+    }
+    
+    .card {
+        box-shadow: 0 16px 48px #E3E7EB;
+    }
+#item-count{
+	top: -24px;
+}
+.btn-default{
+
+	color:unset;
+}
+.username {
+    font-family: muli;
+    font-size: 18px;
+}
+.mobile-nav-item.dropdown-item.dropdown-nav-item
+{
+    font-size: 18px;
+}
+button{
+	color:unset;
+	background-image:unset;
+	box-shadow: none;
+}
+button:hover:not(:disabled), .btn-default:hover{
+	background-color: unset;
+	background-image:unset;
+	color: unset;
+}
+input[type="submit"] {
+	background-image:none;
+	text-shadow:none;
+}
+input[type="submit"]:hover {
+	background-image:none !important;
+	text-shadow:none !important;
+	border:none !important;
+	background-color: #e4c481 !important;
+	color: black !important;
+}
+.dropdown-menu
+{
+    font-size: 16px !important;
+    font-weight: 400 !important;
+    padding: 1rem !important;
+    line-height: 1.5 !important;
+}
+@media only screen and (max-width: 1366px)
+{
+    .notify
+    {
+        top: 7.5em;
+    }
+}
+@media only screen and (min-width: 1370px)
+{
+ .notify{
+    top:11em !important ;
+}   
+}
+</style>
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.16/dist/summernote.min.css" rel="stylesheet">
+% if user.is_staff:
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.16/dist/summernote.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+	/* tinymce.init({
+  		selector: 'textarea#tm',
+  		menubar: 'none'
+	});*/
+	$('#tm').summernote({
+  		toolbar: [
+    		// [groupName, [list of button]]
+    		['style', ['bold', 'italic', 'underline', 'clear']],
+    		['font', ['strikethrough', 'superscript', 'subscript']],
+    		['fontsize', ['fontsize']],
+    		['color', ['color']],
+    		['para', ['ul', 'ol', 'paragraph']],
+    		['height', ['height']]
+  		]
+	});
+	$('input[type="submit"]').click(function(e){
+		$.ajax({
+   		url: "${reverse('blog')}",			// URL
+		method: "POST",                          
+   		data: $('#post_form').serialize(),              // Serialize the form data
+   		success: function (data) {                      // If 200 OK
+      			location.reload();
+   		},
+   		error: function (xhr, text, error) {            // If 40x or 50x; errors
+      			alert('Error: ' + error);
+   		}
+		});
+		e.preventDefault();
+	});
+
+
+	$("#create_post").click(function(e){
+		$('#form_container').show();
+		$('#post_container').hide();
+		$('#create_post').hide();
+		$('#cancel').show();
+		e.preventDefault();
+	});
+
+	$("#cancel").click(function(e){
+		$('#form_container').hide();
+		$('#post_container').show();
+		$('#create_post').show();
+		$('#cancel').hide();
+		e.preventDefault();
+	});
+
+});
+</script>
+% endif
+<main id="main" aria-label="Content" tabindex="-1">
+    <section class="container about">
+ <header class="masthead">
+    <div class="overlay"></div>
+    <div class="container" style="background:#6a1b1a;">
+        <div class="row">
+            <div class=" col-md-8 col-md-10 mx-auto">
+                <div class="site-heading">
+                    <h3 class=" site-heading my-4 mt-3 text-white"> Welcome to TestSite's Blog </h3>
+                    <!--<p class="text-light">We Love Django As much as you do..! &nbsp
+                    </p>-->
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+% if user.is_staff:
+<br>
+<a id="create_post" class="btn btn-primary" href="#!">Create new post</a>
+<a id="cancel" class="btn btn-danger" href="#!" style="display:none;">Cancel</a>
+<br>
+<div id="form_container" class="container"  style="display:none;">
+  <div class="row">
+    <div class="col-md-10">
+ 	<form id="post_form" method="post" role="form">
+        <div class="form-group">
+		Title :
+        	<input type="text" class="form-control" style="font-size: large;font-style: normal;font-family: Roboto;" name="title" placeholder="Blog Title"/>
+        </div>
+        <div class="form-group">
+        	<textarea id="tm" class="form-control" name="content"></textarea>
+        </div>
+        <div class="form-group">
+        	<input type="submit" name="Submit" value="Create" class="btn btn-primary form-control" />
+        </div>
+ 	</form>
+        </div>
+    </div>
+</div>
+<br>
+% endif
+
+<div id="post_container" class="container">
+    <div class="row">
+        <!-- Blog Entries Column -->
+        <div class="col-md-10 mt-3 left">
+            % for post in post_list:
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">${ post['title'] }</h2>
+                    <p class="card-text text-muted h6">${ post['author'] } | ${ post['created'] } </p>
+                    <p class="card-text">${ post['content'] | n }</p>
+                    <a href="${reverse('blog')}?slug=${post['slug']}" class="btn btn-primary">Read More &rarr;</a>
+                </div>
+            </div>
+            % endfor
+        </div>
+    </div>
+</div>
+    </section>
+</main>
+

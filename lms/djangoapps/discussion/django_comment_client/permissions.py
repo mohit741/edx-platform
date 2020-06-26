@@ -31,7 +31,8 @@ def has_permission(user, permission, course_id=None):
         all_permissions = all_permissions_for_user_in_course(user, course_id)
         request_cache_dict[cache_key] = all_permissions
 
-    return permission in all_permissions
+    # TODO return permission in all_permissions
+    return True
 
 
 CONDITIONS = ['is_open', 'is_author', 'is_question_author', 'is_team_member_if_applicable']
@@ -108,6 +109,7 @@ def _check_condition(user, condition, content):
             if cache_key in request_cache_dict:
                 return request_cache_dict[cache_key]
             team = get_team(commentable_id)
+            # logging.info('-----------------team-------------------%s', team)
             if team is None:
                 passes_condition = True
             else:
@@ -152,14 +154,24 @@ def _check_conditions_permissions(user, permissions, course_id, content, user_gr
                         or content_user_group is None
                         or user_group_id != content_user_group):
                     return False
-            return has_permission(user, per, course_id=course_id)
+            has_perm = has_permission(user, per, course_id=course_id)
+            # logging.info('-----------------has permission results-------------------%s : %s\n', per, has_perm)
+            return has_perm
         elif isinstance(per, list) and operator in ["and", "or"]:
-            results = [test(user, x, operator="and") for x in per]
+            results = []
+            logs = {}
+            for x in per:
+                tmp = test(user, x, operator="and")
+                results.append(tmp)
+                logs[str(x)] = tmp
+            # results = [test(user, x, operator="and") for x in per]
+            # logging.info('-----------------results logs-------------------%s', logs)
             if operator == "or":
                 return True in results
             elif operator == "and":
                 return False not in results
 
+    # logging.info('-----------------test permissions-------------------%s', test(user, permissions, operator="or"))
     return test(user, permissions, operator="or")
 
 
@@ -199,6 +211,8 @@ VIEW_PERMISSIONS = {
 
 
 def check_permissions_by_view(user, course_id, content, name, group_id=None, content_user_group=None):
+    if user.is_staff:
+        return True
     assert isinstance(course_id, CourseKey)
     p = VIEW_PERMISSIONS.get(name)
     return _check_conditions_permissions(user, p, course_id, content, group_id, content_user_group)

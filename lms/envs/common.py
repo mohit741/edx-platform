@@ -2267,6 +2267,20 @@ YOUTUBE = {
 }
 YOUTUBE_API_KEY = 'PUT_YOUR_API_KEY_HERE'
 
+# cron_tab settings -mohit741
+CRONJOBS = [
+    ('0 * * * *', 'branding.cron.delete_task', '>> /edx/var/log/cron_job.log')
+]
+# haystack-elasticsearch -mohit741
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': 'haystack.backends.elasticsearch_backend.ElasticsearchSearchEngine',
+        'URL': 'http://localhost:9200/',
+        'INDEX_NAME': 'haystack',
+    },
+}
+MESSAGE_STORAGE = 'messages_extends.storages.FallbackStorage'
+
 ################################### APPS ######################################
 
 # The order of INSTALLED_APPS is important, when adding new apps here
@@ -2283,6 +2297,11 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.staticfiles',
     'djcelery',
+
+    # -mohit741
+    'django_crontab',
+    'messages_extends',
+    'haystack',
 
     # Common Initialization
     'openedx.core.djangoapps.common_initialization.apps.CommonInitializationConfig',

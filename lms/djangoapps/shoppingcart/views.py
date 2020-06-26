@@ -11,7 +11,8 @@ import six
 from config_models.decorators import require_config
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import Group
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import Group, User
 from django.db.models import Q
 from django.http import (
     Http404,
@@ -31,7 +32,8 @@ from opaque_keys import InvalidKeyError
 from opaque_keys.edx.keys import CourseKey
 from opaque_keys.edx.locator import CourseLocator
 
-from course_modes.models import CourseMode
+from course_modes.models import CourseMode, get_course_prices
+from lms.djangoapps.commerce.utils import EcommerceService
 from lms.djangoapps.courseware.courses import get_course_by_id
 from edxmako.shortcuts import render_to_response
 from openedx.core.djangoapps.embargo import api as embargo_api
@@ -113,11 +115,37 @@ def add_course_to_cart(request, course_id):
     if not request.user.is_authenticated:
         log.info(u"Anon user trying to add course %s to cart", course_id)
         return HttpResponseForbidden(_('You must be logged-in to add to a shopping cart'))
+
+    # Trying to integrate shoopingcart with ecommerce service -mohit741
+    # Check if ecommerce service is enabled and initialize checkout links
+    ecomm_service = EcommerceService()
+    ecommerce_checkout = ecomm_service.is_enabled(request.user)
+    ecommerce_checkout_link = ''
+    ecommerce_bulk_checkout_link = ''
+    # Get course's sku and price to update OrderItem: sku, price, currency -mohit741
+    modes = CourseMode.paid_modes_for_course(course_id)
+    sku = None
+    unit_cost = None
+    currency = None
+    if len(modes) > 1:
+        if request.user.profile.country.code == 'IN':
+            sku = modes[0].sku
+            unit_cost = modes[0].min_price
+            currency = modes[0].currency
+        else:
+            sku = modes[1].sku
+            unit_cost = modes[1].min_price
+            currency = modes[1].currency
+    else:
+        sku = modes[0].sku
+        unit_cost = modes[0].min_price
+        currency = modes[0].currency
+
     cart = Order.get_cart_for_user(request.user)
     course_key = CourseKey.from_string(course_id)
     # All logging from here handled by the model
     try:
-        paid_course_item = PaidCourseRegistration.add_to_order(cart, course_key)
+        paid_course_item = PaidCourseRegistration.add_to_order(cart, course_key, cost=unit_cost, sku=sku)
     except CourseDoesNotExistException:
         return HttpResponseNotFound(_('The course you requested does not exist.'))
     except ItemAlreadyInCartException:
@@ -193,7 +221,7 @@ def show_cart(request):
     This view shows cart items.
     """
     cart = Order.get_cart_for_user(request.user)
-    is_any_course_expired, expired_cart_items, expired_cart_item_names, valid_cart_item_tuples = \
+    is_any_course_expired, expired_cart_items, expired_cart_item_names, valid_cart_item_tuples, course_ids = \
         verify_for_closed_enrollment(request.user, cart)
     site_name = configuration_helpers.get_value('SITE_NAME', settings.SITE_NAME)
 
@@ -206,6 +234,21 @@ def show_cart(request):
         reverse("shoppingcart.views.postpay_callback")
     )
     form_html = render_purchase_form_html(cart, callback_url=callback_url)
+
+    # Trying to integrate shoopingcart with ecommerce service -mohit741
+    # Check if ecommerce service is enabled and initialize checkout links
+    ecomm_service = EcommerceService()
+    ecommerce_checkout = ecomm_service.is_enabled(request.user)
+    ecommerce_checkout_link = ''
+    ecommerce_bulk_checkout_link = ''
+    # Check if user's country is IN
+    is_indian = request.user.profile.country.code == 'IN'
+    # Get a list of course's SKUs currently in cart 
+    sku_list = list()
+    items = cart.orderitem_set.all().select_subclasses("paidcourseregistration")
+    for _item in items:
+        sku_list.append(_item.sku)
+
     context = {
         'order': cart,
         'shoppingcart_items': valid_cart_item_tuples,
@@ -214,9 +257,10 @@ def show_cart(request):
         'expired_course_names': expired_cart_item_names,
         'site_name': site_name,
         'form_html': form_html,
-        'currency_symbol': settings.PAID_COURSE_REGISTRATION_CURRENCY[1],
-        'currency': settings.PAID_COURSE_REGISTRATION_CURRENCY[0],
-        'enable_bulk_purchase': configuration_helpers.get_value('ENABLE_SHOPPING_CART_BULK_PURCHASE', True)
+        'currency_symbol':  '₹' if is_indian else settings.PAID_COURSE_REGISTRATION_CURRENCY[1],
+        'currency':  'inr' if is_indian else settings.PAID_COURSE_REGISTRATION_CURRENCY[0],
+        'enable_bulk_purchase': configuration_helpers.get_value('ENABLE_SHOPPING_CART_BULK_PURCHASE', True),
+        'sku_list': sku_list
     }
     return render_to_response("shoppingcart/shopping_cart.html", context)
 
@@ -237,6 +281,21 @@ def clear_cart(request):
 
     return HttpResponse('Cleared')
 
+@csrf_exempt
+def clear_cart_ajax(request):
+    user = User.objects.get(username=request.POST.get('user'))
+    cart = Order.get_cart_for_user(user)
+    cart.clear()
+    coupon_redemption = CouponRedemption.objects.filter(user=user, order=cart.id)
+    if coupon_redemption:
+        coupon_redemption.delete()
+        log.info(
+            u'Coupon redemption entry removed for user %s for order %s',
+            user,
+            cart.id,
+        )
+
+    return HttpResponse('Cleared')
 
 @login_required
 @enforce_shopping_cart_enabled
@@ -263,6 +322,14 @@ def remove_item(request):
 
     return HttpResponse('OK')
 
+@csrf_exempt
+def remove_item_ajax(request):
+    user = User.objects.get(username=request.POST.get('user'))
+    sku = request.POST.get('sku')
+    _item = PaidCourseRegistration.objects.get(sku=sku)
+    Order.remove_cart_item_from_order(_item, user)
+    _item.order.update_order_type()
+    return HttpResponse('OK')
 
 @login_required
 @enforce_shopping_cart_enabled
@@ -275,6 +342,14 @@ def reset_code_redemption(request):
     CouponRedemption.remove_coupon_redemption_from_cart(request.user, cart)
     return HttpResponse('reset')
 
+# Count number of items in user's cart -mohit741
+@csrf_exempt
+@login_required
+@enforce_shopping_cart_enabled
+def items_count(request):
+    cart = Order.get_cart_for_user(request.user)
+    items = cart.orderitem_set.all().select_subclasses("paidcourseregistration")
+    return HttpResponse(len(items))
 
 @login_required
 @enforce_shopping_cart_enabled
@@ -785,6 +860,7 @@ def verify_for_closed_enrollment(user, cart=None):
     """
     if cart is None:
         cart = Order.get_cart_for_user(user)
+    course_ids = []
     expired_cart_items = []
     expired_cart_item_names = []
     valid_cart_item_tuples = []
@@ -793,6 +869,7 @@ def verify_for_closed_enrollment(user, cart=None):
     for cart_item in cart_items:
         course_key = getattr(cart_item, 'course_id', None)
         if course_key is not None:
+            course_ids.append(course_key)
             course = get_course_by_id(course_key, depth=0)
             if CourseEnrollment.is_enrollment_closed(user, course):
                 is_any_course_expired = True
@@ -801,8 +878,7 @@ def verify_for_closed_enrollment(user, cart=None):
             else:
                 valid_cart_item_tuples.append((cart_item, course))
 
-    return is_any_course_expired, expired_cart_items, expired_cart_item_names, valid_cart_item_tuples
-
+    return is_any_course_expired, expired_cart_items, expired_cart_item_names, valid_cart_item_tuples, course_ids
 
 @require_http_methods(["GET"])
 @login_required

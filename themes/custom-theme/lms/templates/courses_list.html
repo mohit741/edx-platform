@@ -1,0 +1,197 @@
+<%page expression_filter="h"/>
+<%namespace name='static' file='static_content.html'/>
+<%!
+from django.utils.translation import ugettext as _
+from django.urls import reverse
+from six import text_type
+%>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" integrity="sha256-UhQQ4fxEeABh4JrcmAJ1+16id/1dnlOEVCFOxDef9Lw=" crossorigin="anonymous" />
+<link rel="stylesheet" href="/static/custom-theme/css/course_item.css" type="text/css" media="all">
+<link rel="stylesheet" href="/static/custom-theme/css/product_card.css" type="text/css" media="all">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js" integrity="sha256-pTxD+DSzIwmwhOqTFN+DB+nHjO4iAsbgfyFq5K5bcE0=" crossorigin="anonymous"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+
+fetch('https://extreme-ip-lookup.com/json/')
+.then( res => res.json())
+.then(response => {
+    console.log("Country: ", response.country);
+      if(response.countryCode == 'IN'){
+    $(".inr_price").show();
+  }
+  else{
+    $(".usd_price").show();
+  }
+ })
+ .catch((data, status) => {
+    console.log('Request failed');
+ });
+
+
+
+   var pops = $("[rel=popover]");
+  %for course in courses[:homepage_course_max]:
+
+  /*Popover js code*/
+  $('#${course.display_number_with_default}').popover({
+      placement: 'right',
+      trigger: 'manual',
+      animation: true,
+      content : function() {
+          return $('#${course.display_number_with_default}-popover').html();
+        }
+   }).on('mouseenter', function () {
+    var _this = this;
+    pops.not('#${course.display_number_with_default}').popover("hide");
+	//console.log('sleep 2');
+    $(this).popover('show');
+    //$(document).not(this).popover('hide');
+    $('.popover').on('mouseleave', function () {
+        $(_this).popover('hide');
+    });
+  }).on('mouseleave', function () {
+    var _this = this;
+    setTimeout(function () {
+        if (!$('.popover:hover').length) {
+            $(_this).popover('hide');
+        }
+    }, 50);
+  }); 
+  %endfor
+
+});
+</script>
+<section class="courses-container">
+  <section class="highlighted-courses">
+    <span class="search_bar">
+    <input type="search" name="search" placeholder="" id="search_input">
+    </span>
+    % if settings.FEATURES.get('COURSES_ARE_BROWSABLE'):
+      <section class="courses">
+        <span class="header-text" id="part-1">
+          <h1>ABC Part 1 </h1>
+           <i class="fa fa-caret-right"></i>
+        </span>
+        <span class="header-text" id="part-2">
+          <h1>ABC Part 2  </h1>
+          <i class="fa fa-caret-right"></i>
+        </span>
+          ## limiting the course number by using HOMEPAGE_COURSE_MAX as the maximum number of courses
+          %for course in courses[:homepage_course_max]:
+		<div class="item">
+              <%include file="course.html" args="course=course" />
+		</div>
+          %endfor
+        
+	
+      </section>
+    ## in case there are courses that are not shown on the homepage, a 'View all Courses' link should appear
+      % if homepage_course_max and len(courses) > homepage_course_max:
+      <div class="courses-more">
+        <a class="courses-more-cta" href="${marketing_link('COURSES')}"> ${_("View all Courses")} </a>
+      </div>
+    % endif
+    % endif
+
+</section>
+<section class="branding-mid">
+	<!--<img src="${static.url("images/mid-banner.png")}"/> -->
+
+</section>
+</section>
+<div class="course-features-text"> 
+  <h1>ABC PACKAGE FEATURES</h1>
+</div>
+  <div class="course_features">
+<ul class="feature_list_1">
+ <li class="feature_item_1">
+  <a href="/study_planner" class="feature_thumbnail" id="thubnail">
+    <img src="/static/custom-theme/images/Features_img/image1.png" alt="study planner" class="feature_image">
+  </a>
+ </li>
+ <li class="feature_item_1">
+  <a href="/lecture_videos" class="feature_thumbnail" id="thubnail">
+    <img src="/static/custom-theme/images/Features_img/image2.png"  alt="Lecture Videos"  class="feature_image">
+  </a>
+ </li>
+ <li class="feature_item_1">
+  <a href="/complete_study_material" class="feature_thumbnail" id="thubnail">
+    <img src="/static/custom-theme/images/Features_img/image3.png" alt="Complete Study Material" class="feature_image">
+  </a>
+ </li>
+ <li class="feature_item_1">
+  <a href="/question_bank" class="feature_thumbnail" id="thubnail">
+    <img src="/static/custom-theme/images/Features_img/image4.png" alt="Question Banks" class="feature_image">
+  </a>
+ </li>
+ <li class="feature_item_2">
+  <a href="/mock_tests" class="feature_thumbnail" id="thubnail">
+    <img src="/static/custom-theme/images/Features_img/image5.png" alt="Mock Tests" class="feature_image">
+  </a>
+ </li>
+ <li class="feature_item_2">
+  <a href="/sample_paper" class="feature_thumbnail" id="thubnail">
+    <img src="/static/custom-theme/images/Features_img/image6.png" alt="Past Sample Question Papers" class="feature_image">
+  </a>
+</li>
+
+<li class="feature_item_2">
+  <a href="/doubt_clear" class="feature_thumbnail" id="thubnail">
+    <img src="/static/custom-theme/images/Features_img/image7.png" alt="Doubt Cleaning Forum" class="feature_image">
+  </a>
+</li>
+<li class="feature_item_2">
+  <a href="/access_till_pass" class="feature_thumbnail" id="thubnail">
+    <img src="/static/custom-theme/images/Features_img/image8.png" alt="Access Till You Pass" class="feature_image">
+  </a>
+</li>
+
+</ul>
+<img src="/static/custom-theme/images/course_feature.jpg" class="course_feature" id="side-image" alt="Course Feature Image">
+</div>
+<section class="courses-details">
+	<div class="container courses-listing">
+		%for course in courses[:homepage_course_max]:
+		<a class="row card details" href="${reverse('about_course', args=[text_type(course.id)])}">
+			<div class="col-sm-4 col-md-6 col-lg-5 col-xl-5" style="padding:10px;">
+				<img class="course-img" src="${course.course_image_url}" />
+			</div>
+			<div class="col-sm-8 col-md-6 col-lg-7 col-xl-7" style="padding-left:10vw; display:block; line-height:1rem;">
+				<span><h2>${course.display_name_with_default}</h2></span>
+				<span><h4>Course by : ${course.display_org_with_default}</h4></span>
+				<span class="inr_price" id="course_price" style="display: none;">
+          <h4><i class="fa fa-inr" id="currency_symbol" aria-hidden="true"></i>INR ${course.inr_price}</h4>
+        </span>
+				<span class="usd_price" id="course_price" style="display: none;">
+          <h4> <i class="fa fa-dollar-sign" id="currency_symbol" aria-hidden="true"></i> USD ${course.general_price}</h4>
+        </span>
+				<span id="list_starts"> <i class="fa fa-clock-o" aria-hidden="true"></i>
+					Enrollment Open
+        		</span>
+			</div>
+	       </a>
+	       %endfor
+	</div>
+</section>
+<script type="text/javascript">
+  $(document).ready(
+    function()
+  {
+    if($(window).width()>800)
+    {
+    var i_height=281,i_width=289,w_height=959,w_width=1845;
+    var ratio=i_height/i_width;
+    console.log(ratio);
+i_width=i_width*($(window).width()/w_width);
+i_height=i_width*ratio;
+$(".card.course-card").css("width",i_width);
+$(".card.course-card").css("height",i_height);
+$(".card-img-top.course-card").css("height",0.53*i_height);
+var icon_height = $(".feature_item_1").css("width");
+$(".feature_item_1").css("height",icon_height);
+$("#part-2").css("top",i_height+140);
+}
+}
+  );
+</script>

@@ -69,7 +69,8 @@ from lms.djangoapps.courseware.courses import (
     get_permission_for_course_about,
     get_studio_url,
     sort_by_announcement,
-    sort_by_start_date
+    sort_by_start_date,
+    sort_by_subject_then_program
 )
 from lms.djangoapps.courseware.date_summary import verified_upgrade_deadline_link
 from lms.djangoapps.courseware.exceptions import CourseAccessRedirect, Redirect
@@ -114,6 +115,7 @@ from openedx.features.course_experience import (
     UNIFIED_COURSE_TAB_FLAG,
     course_home_url_name
 )
+from openedx.features.course_experience.views.course_outline import CourseOutlineFragmentView
 from openedx.features.course_experience.course_tools import CourseToolsPluginManager
 from openedx.features.course_experience.utils import dates_banner_should_display
 from openedx.features.course_experience.views.course_dates import CourseDatesFragmentView
@@ -135,6 +137,9 @@ from xmodule.x_module import STUDENT_VIEW
 from ..context_processor import user_timezone_locale_prefs
 from ..entrance_exams import user_can_skip_entrance_exam
 from ..module_render import get_module, get_module_by_usage_id, get_module_for_descriptor
+
+import shoppingcart
+from shoppingcart.utils import is_shopping_cart_enabled
 
 log = logging.getLogger("edx.courseware")
 
@@ -248,15 +253,11 @@ def courses(request):
     """
     courses_list = []
     course_discovery_meanings = getattr(settings, 'COURSE_DISCOVERY_MEANINGS', {})
+    
     if not settings.FEATURES.get('ENABLE_COURSE_DISCOVERY'):
         courses_list = get_courses(request.user)
 
-        if configuration_helpers.get_value("ENABLE_COURSE_SORTING_BY_START_DATE",
-                                           settings.FEATURES["ENABLE_COURSE_SORTING_BY_START_DATE"]):
-            courses_list = sort_by_start_date(courses_list)
-        else:
-            courses_list = sort_by_announcement(courses_list)
-
+    courses_list = sort_by_subject_then_program(courses_list)
     # Add marketable programs to the context.
     programs_list = get_programs_with_type(request.site, include_hidden=False)
 
@@ -893,7 +894,8 @@ def course_about(request, course_id):
         course_details = CourseDetails.populate(course)
         modes = CourseMode.modes_for_course_dict(course_key)
         registered = registered_for_course(course, request.user)
-
+        if registered:
+            return redirect(reverse(course_home_url_name(course_key), args=[text_type(course_key)]))
         staff_access = bool(has_access(request.user, 'staff', course))
         studio_url = get_studio_url(course, 'settings/details')
 
@@ -908,27 +910,52 @@ def course_about(request, course_id):
             ) or settings.FEATURES.get('ENABLE_LMS_MIGRATION')
         )
 
+        # Note: this is a flow for payment for course registration, not the Verified Certificate flow.
+        in_cart = False
+        reg_then_add_to_cart_link = ""
+
+        _is_shopping_cart_enabled = is_shopping_cart_enabled()
+        if _is_shopping_cart_enabled:
+            if request.user.is_authenticated:
+                cart = shoppingcart.models.Order.get_cart_for_user(request.user)
+                in_cart = shoppingcart.models.PaidCourseRegistration.contained_in_order(cart, course_key) or \
+                    shoppingcart.models.CourseRegCodeItem.contained_in_order(cart, course_key)
+
+            reg_then_add_to_cart_link = "{reg_url}?course_id={course_id}&enrollment_action=add_to_cart".format(
+                reg_url=reverse('register_user'), course_id=six.moves.urllib.parse.quote(str(course_id))
+            )
+
         # If the ecommerce checkout flow is enabled and the mode of the course is
         # professional or no id professional, we construct links for the enrollment
         # button to add the course to the ecommerce basket.
+
         ecomm_service = EcommerceService()
         ecommerce_checkout = ecomm_service.is_enabled(request.user)
         ecommerce_checkout_link = ''
         ecommerce_bulk_checkout_link = ''
         single_paid_mode = None
         if ecommerce_checkout:
-            if len(modes) == 1 and list(modes.values())[0].min_price:
-                single_paid_mode = list(modes.values())[0]
-            else:
-                # have professional ignore other modes for historical reasons
-                single_paid_mode = modes.get(CourseMode.PROFESSIONAL)
+            _modes = CourseMode.paid_modes_for_course(course_id)
+            if len(_modes) > 1:
+                if request.user.is_authenticated and request.user.profile.country.code == 'IN':
+                    single_paid_mode = _modes[0]
+                else:
+                    single_paid_mode = _modes[1]
+            elif len(_modes) == 1:
+                single_paid_mode = _modes[0]
 
             if single_paid_mode and single_paid_mode.sku:
                 ecommerce_checkout_link = ecomm_service.get_checkout_page_url(single_paid_mode.sku)
             if single_paid_mode and single_paid_mode.bulk_sku:
                 ecommerce_bulk_checkout_link = ecomm_service.get_checkout_page_url(single_paid_mode.bulk_sku)
 
-        registration_price, course_price = get_course_prices(course)
+        try:
+            if request.user.is_authenticated and request.user.profile.country.code == 'IN':
+                registration_price, course_price = get_course_prices(course, currency='inr')
+            else:
+                registration_price, course_price = get_course_prices(course)
+        except Exception:
+            registration_price, course_price = 15000, 15000
 
         # Used to provide context to message to student if enrollment not allowed
         can_enroll = bool(request.user.has_perm(ENROLL_IN_COURSE, course))
@@ -948,7 +975,8 @@ def course_about(request, course_id):
 
         # Overview
         overview = CourseOverview.get_from_id(course.id)
-
+        general_price = overview.general_price
+        inr_price = overview.inr_price
         sidebar_html_enabled = course_experience_waffle().is_enabled(ENABLE_COURSE_ABOUT_SIDEBAR_HTML)
 
         allow_anonymous = check_public_access(course, [COURSE_VISIBILITY_PUBLIC, COURSE_VISIBILITY_PUBLIC_OUTLINE])
@@ -961,8 +989,14 @@ def course_about(request, course_id):
         # Embed the course reviews tool
         reviews_fragment_view = CourseReviewsModuleFragmentView().render_to_fragment(request, course=course)
 
+        # Get course outline as a fragment -mohit741
+        outline_fragment = CourseOutlineFragmentView().render_to_fragment(request, course_id, user_is_enrolled=False)
+
         context = {
             'course': course,
+            'outline_fragment': outline_fragment,
+            'general_price' : general_price,
+            'inr_price' : inr_price,
             'course_details': course_details,
             'staff_access': staff_access,
             'studio_url': studio_url,
@@ -988,6 +1022,8 @@ def course_about(request, course_id):
             'reviews_fragment_view': reviews_fragment_view,
             'sidebar_html_enabled': sidebar_html_enabled,
             'allow_anonymous': allow_anonymous,
+            'reg_then_add_to_cart_link': reg_then_add_to_cart_link,
+            'cart_link': reverse('shoppingcart.views.show_cart')
         }
 
         return render_to_response('courseware/course_about.html', context)
@@ -1918,3 +1954,4 @@ def get_financial_aid_courses(user):
             )
 
     return financial_aid_courses
+

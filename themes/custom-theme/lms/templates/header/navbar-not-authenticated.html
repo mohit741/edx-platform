@@ -1,0 +1,110 @@
+## mako
+
+<%page expression_filter="h"/>
+
+<%namespace name='static' file='../static_content.html'/>
+<%namespace file='../main.html' import="login_query"/>
+
+<%!
+from django.urls import reverse
+from django.utils.translation import ugettext as _
+from six import text_type
+%>
+
+<%
+  mktg_site_enabled = static.get_value('ENABLE_MKTG_SITE', settings.FEATURES.get('ENABLE_MKTG_SITE', False))
+  courses_are_browsable = settings.FEATURES.get('COURSES_ARE_BROWSABLE')
+  allows_login = not settings.FEATURES['DISABLE_LOGIN_BUTTON'] and not combined_login_and_register
+  can_discover_courses = settings.FEATURES.get('ENABLE_COURSE_DISCOVERY')
+  allow_public_account_creation = static.get_value('ALLOW_PUBLIC_ACCOUNT_CREATION', settings.FEATURES.get('ALLOW_PUBLIC_ACCOUNT_CREATION'))
+%>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<link rel="stylesheet" href="/static/custom-theme/css/custom_header_noauth.css" type="text/css" media="all">
+<style type="text/css">
+.notification_dd li {
+	margin-left:2em;
+}
+</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+<nav class="nav-links" aria-label=${_("Supplemental Links")}>
+  <div class="main">
+    
+  % if mktg_site_enabled:
+    <div class="mobile-nav-item hidden-mobile nav-item">
+      <a href="${marketing_link('HOW_IT_WORKS')}">${_("How it Works")}</a>
+    </div>
+    % if courses_are_browsable:
+      <div class="mobile-nav-item hidden-mobile nav-item">
+        <a href="${marketing_link('COURSES')}">${_("Courses")}</a>
+      </div>
+    % endif
+    <div class="mobile-nav-item hidden-mobile nav-item">
+      <a href="${marketing_link('SCHOOLS')}">${_("Schools")}</a>
+    </div>
+  % endif
+  % if allows_login:
+    % if can_discover_courses:
+      <div class="mobile-nav-item hidden-mobile nav-item">
+        <a href="/courses">${_('Explore courses')}</a>
+      </div>
+    %endif
+  % endif
+  </div>
+  <div class="secondary">
+    <div class="login_register">
+      % if allows_login:
+	    <div class="mobile-nav-item hidden-mobile nav-item">
+              <a class="" href="${reverse('shoppingcart.views.show_cart')}">
+		<!--<i class="fa fa-shopping-cart" id="shopping_cart_icon"></i>-->
+    <img class="cart-icon" src="/static/custom-theme/images/Cart.png">
+	      </a>
+            </div>
+	    <%include file="notification.html"/>
+        % if allow_public_account_creation:
+            <div class="mobile-nav-item hidden-mobile nav-item">
+              <a class="register-btn btn" data-toggle="modal" data-target="#popUpWindow1" href="/register${login_query()}">${_("Register")}</a>
+            </div>
+        % endif
+          <div class="mobile-nav-item hidden-mobile nav-item">
+            <a id="global-signin-btn" class="sign-in-btn btn" data-toggle="modal" data-target="#popUpWindow" href="/login${login_query()}">${_("Sign in")}</a>
+          </div>
+      % endif
+    </div>
+        <div class="course_feature">
+    <ul class="nav_menu">
+      <li class="nav_menu_item">
+        <div class="dropdown show">
+          <a class="btn btn-secondary dropdown-toggle" href="/sample_videos" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            ABC
+          </a>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+            <a class="dropdown-item" href="/contact">Sample Videos</a>
+            <a class="dropdown-item" href="/tp1">Training Package 1</a>
+            <a class="dropdown-item" href="/tp2">Training Package 2</a>
+          </div>
+        </div>
+      </li>
+      <!--
+      <li class="nav_menu_item">
+       <a href="/contact" class="nav_item_link"> Contact Us</a>
+      </li>
+      <li class="nav_menu_item">
+         <div class="dropdown show">
+          <a class="btn btn-secondary dropdown-toggle" href="/about_mf" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            About Us
+          </a>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+            <a class="dropdown-item" href="/instructors_profile">Instructor's Profile</a>
+            <a class="dropdown-item" href="/about_mf">About MF</a>
+            <a class="dropdown-item" href="/our_expertise">Our Expertise</a>
+          </div>
+        </div>
+      </li>
+    -->
+      <li class="nav_menu_item">
+        <a href="/blog" class="nav_item_link"> BLOG</a>
+      </li>
+    </ul>
+  </div>
+  </div>
+</nav>

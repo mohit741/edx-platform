@@ -1,0 +1,228 @@
+<link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+<%page expression_filter="h"/>
+<%! from openedx.core.djangolib.markup import HTML %>
+<div class="unit-tittle-bar">
+%if unit_title:
+  <h2 class="hd hd-2 unit-title">${unit_title}</h2>
+% endif
+
+% if show_bookmark_button:
+    <%include file='bookmark_button.html' args="bookmark_id=bookmark_id, is_bookmarked=bookmarked"/>
+% endif
+</div>
+<style>
+.add_post_btn_container{
+	display:block !important;
+}
+</style>
+<div class="vert-mod">
+    <span class="btn open-btn" style="display:none;">
+      <p>Course Content</p>
+      <i class="fa fa-arrow-right"></i>
+    </span>
+    <!-- <div class="side-header-closed">
+      <span class="open-btn" >
+      <i class="fa fa-arrow-right"></i>
+    </span>
+  </div>
+  <div class="side">
+    <div class="side-header">
+      <p class="side-text">
+        Course Content
+      </p>
+    <span class="close-btn">
+      <i class="fa fa-arrow-left"></i>
+    </span>
+  </div>
+    <div class="course-contain">
+      <div class="coursecont">
+        <p style="color:white;">It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like).
+        </p>
+      </div>
+    </div>
+  </div> -->
+  <ul class="nav nav-tabs">
+% for idx, item in enumerate(items):
+  % if item['content']:
+    <li class="nav-item" id="nav-${idx}">
+    <a class="nav-link" data-toggle="tab" href="#tab-${idx}" id="T-${idx}"> </a>
+  </li>
+  <script type="text/javascript">
+    var x=$(".vert.vert-${idx}").children();
+    var y=x.attr("data-block-type");
+    if(y=="html")
+    {
+      y="Course Materials";
+    }
+    if(y=="video")
+    {
+      $("#nav-${idx}").hide();
+      $(".vert.vert-${idx}").css("order","-1");
+      var kk=$(".vert.vert-${idx}").children();
+      kk.css("width","70vw");
+      kk.css("margin-left","10%");
+      kk.css("margin-right","1.5%");
+      kk.css("margin-top","0%");
+      kk.css("margin-bottom","1%");
+      kk.css("padding","1px");
+      kk.attr("id","course-video"); 
+    }
+    y=y.charAt(0).toUpperCase() + y.slice(1);
+    if(y=="Discussion")
+    {
+    	$("#T-${idx}").append("<p class=\"Discussion\">"+y+"</p>");
+      $("#T-${idx}").attr("class","nav-link active");
+      $("#tab-${idx}").attr("class","container tab-pane fade active show");
+    }
+    if(y=="Course Materials")
+    {
+    	$("#T-${idx}").append("<p class=\"Course Materials\">"+y+"</p>");
+    }
+  </script>
+  %endif
+% endfor
+</ul>
+% for idx,item in enumerate(items):
+<script type="text/javascript">
+  if(!$("iframe").length)
+  {
+    var ele=$(".vert.vert-${idx}");  
+    var a=ele.children();
+    var b=a.attr("data-block-type");
+    if(b=="video")
+    {
+      $(".vert-mod").append(ele);
+    }
+  }
+  else
+  {
+    var m=$("iframe");
+    m.css("width","70vw");
+    m.css("height","40vw");
+        var i=m.parent();
+        var j=i.parent();
+        var k=j.parent();
+        j.has('p').css("display","none !important");
+        var aa=k.attr("class");
+        var num=aa.substr(10,11);
+        num="#nav-"+num;
+        $(num).hide();
+        $(".vert-mod").prepend(k);
+        k.css("padding-left","0%");
+        k.css("padding-right","1.5%");
+        k.css("padding-top","1%");
+        k.css("padding-bottom","0%");
+        k.css("margin-bottom","0 !important");
+        k.css("box-shadow","0 2px 5px gray");
+        m.css("border","1px solid gray");
+       // $("#nav-${idx}").hide();
+  }
+</script>
+% endfor
+<script type="text/javascript">
+  $("#tab-0").attr('class',"container tab-pane fade active show");
+</script>
+
+<div class="tab-content">
+% for idx, item in enumerate(items):
+<div id="tab-${idx}" class="container tab-pane fade">
+  % if item['content']:
+    <div class="vert vert-${idx}" data-id="${item['id']}">
+        ${HTML(item['content'])}
+    </div>
+  %endif
+</div>
+% endfor
+</div>
+</div>
+<script type="text/javascript">
+  $(window).scroll(function() {
+      var x=$(window).scrollTop(); 
+      var y=$("body").height();
+      y=y-121;
+      if(x<55)
+      {
+        $(".side").css("top",55-x); 
+      }
+      else
+      {
+        $(".side").css("top",0); 
+        
+      }
+      if(x<340)
+      {
+        $(".side").css("height","90%");
+        console.log("100%");
+      }
+      else
+      {
+         $(".side").css("height","73%");
+         console.log("73%");
+      }
+ });
+   $(".sequence-bottom").css("margin-left","3.5%");
+   $(".sequence-bottom").css("top","24vw");
+   $(".hd.hd-2.unit-title").css("margin-left","10%");
+
+$(".btn.close-btn").on('click',function()
+{
+  hidefn();
+  $("#course-video").css("margin-left","14%");
+  $("iframe").css("width","70vw");
+  $("iframe").css("height","70vh");
+  $(".side-header-closed").show();
+  $(".tab-content").css("margin-left","10%");
+  $(".tab-content").css("width","80%");
+  $("ul.nav.nav-tabs").css("margin-left","10%");
+  $(".sequence-bottom").css("width","100%");
+  $(".sequence-bottom").css("margin-left","0%");
+  $(".sequence-bottom").css("top","28vw");
+  $(".hd.hd-2.unit-title").css("margin-left","14%");
+}
+);
+function hidefn() {
+  $(".course-index").fadeOut( "fast",function() {
+      $(".btn.open-btn").show();
+  });
+  /*setTimeout(function()
+    {
+      $(".course-index").hide();
+      $(".btn.open-btn").show();
+    }, 300);*/
+}
+function showfn() {
+	$(".course-index").fadeIn("fast",function() {
+	});
+}
+$(".btn.open-btn").on("click",function()
+{
+  $(this).hide();
+  showfn();
+  $("#course-video").css("margin-left","10%");
+  $("iframe").css("width","60vw");
+  $("iframe").css("height","60vh");
+  $(".tab-content").css("margin-left","11%");
+  $(".tab-content").css("width","80%");
+  $("ul.nav.nav-tabs").css("margin-left","10%");
+  $(".sequence-bottom").css("width","70%");
+  $(".sequence-bottom").css("margin-left","3.5%");
+  $(".sequence-bottom").css("top","24vw");
+  $(".hd.hd-2.unit-title").css("margin-left","10%");
+});
+
+$('.btn.open-btn').hover(function(){
+	$('.btn.open-btn p').show();
+},function(){
+	$('.btn.open-btn p').hide();
+});
+</script>
+
+
+
+
+
+

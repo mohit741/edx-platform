@@ -1,0 +1,111 @@
+<%page expression_filter="h"/>
+<%!
+import json
+from django.utils.translation import ugettext as _
+from openedx.core.djangolib.js_utils import js_escaped_string, dump_js_escaped_json
+from django.urls import reverse
+from six import text_type
+%>
+<%inherit file="../main.html" />
+<%
+  course_discovery_enabled = settings.FEATURES.get('ENABLE_COURSE_DISCOVERY')
+%>
+
+<%namespace name='static' file='../static_content.html'/>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+% if course_discovery_enabled:
+<%block name="header_extras">
+  % for template_name in ["course_card", "filter_bar", "filter", "facet", "facet_option"]:
+  <script type="text/template" id="${template_name}-tpl">
+      <%static:include path="discovery/${template_name}.underscore" />
+  </script>
+  % endfor
+  <%static:require_module module_name="js/discovery/discovery_factory" class_name="DiscoveryFactory">
+    DiscoveryFactory(
+      ${course_discovery_meanings | n, dump_js_escaped_json},
+      getParameterByName('search_query'),
+      "${user_language | n, js_escaped_string}",
+      "${user_timezone | n, js_escaped_string}"
+    );
+  </%static:require_module>
+</%block>
+% endif
+
+<link rel="stylesheet" href="/static/custom-theme/css/custom_courses.css" type="text/css" media="all">
+<link rel="stylesheet" href="/static/custom-theme/css/course_item.css" type="text/css" media="all">
+<link rel="stylesheet" href="/static/custom-theme/css/custom_course_item.css" type="text/css" media="all">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<%block name="pagetitle">${_("Courses")}</%block>
+
+<main id="main" aria-label="Content" tabindex="-1">
+    <section class="find-courses">
+      <div class="container-fluid" id="course-discovery-heading">
+        <h1>Explore Courses</h1>
+      </div>
+      <section class="courses-container">
+        % if course_discovery_enabled:
+        <div id="discovery-form" role="search" aria-label="course" class="wrapper-search-context">
+          <div id="discovery-message" class="search-status-label"></div>
+          <form class="wrapper-search-input">
+            <label for="discovery-input" class="sr">${_('Search for a course')}</label>
+            <input id="discovery-input" class="discovery-input" placeholder="${_('Search for a course')}" type="text"/>
+            <button type="submit" class="button postfix discovery-submit" title="${_('Search')}">
+              <span class="icon fa fa-search" aria-hidden="true"></span>
+              <div aria-live="polite" aria-relevant="all">
+                <div id="loading-indicator" class="loading-spinner hidden">
+                  <span class="icon fa fa-spinner fa-spin" aria-hidden="true"></span>
+                  <span class="sr">${_('Loading')}</span>
+                </div>
+              </div>
+            </button>
+          </form>
+        </div>
+
+        <div id="filter-bar" class="filters hide-phone is-collapsed">
+        </div>
+        % endif
+        <div class="courses${'' if course_discovery_enabled else ' no-course-discovery'}" role="region" aria-label="${_('List of Courses')}">
+        <section class="sec-courses">
+        <div class="container courses-listing">
+            <span class="header-text" id="part-1">
+          <h1>ABC Part 1</h1>
+          <span><i class="fa fa-triangle"></i></span>
+        </span>
+        <span class="header-text" id="part-2">
+          <h1>ABC Part 2</h1>
+        </span>
+		%for course in courses:
+		<a class="row card details" href="${reverse('about_course', args=[text_type(course.id)])}" rel="popover">
+
+			<div class="col-sm-4 col-md-6 col-lg-5 col-xl-5" id="course-image">
+				<img class="course-img" src="${course.course_image_url}" />
+			</div>
+			<div class="col-sm-8 col-md-6 col-lg-7 col-xl-7" id="course-description" style="">
+				<span><h2>${course.display_name_with_default}</h2></span>
+				<span><h4>Course by : ${course.display_org_with_default}</h4></span>
+				<span id="list_starts"> <i class="fa fa-clock-o" aria-hidden="true"></i>
+          			Enrollment Open
+        	</span>
+			</div>
+        <img class="logo-image" src="/static/custom-theme/images/logo_notext.png" alt="${_("{platform_name} Home Page").format(platform_name=static.get_platform_name())}" itemprop="logo" id="logo-small"/>
+	       </a>
+	       %endfor
+	</div>
+
+        </section>
+        </div>
+
+
+        % if course_discovery_enabled:
+        <aside aria-label="${_('Refine Your Search')}" class="search-facets phone-menu">
+          <h2 class="header-search-facets">${_('Refine Your Search')}</h2>
+          <section class="search-facets-lists">
+          </section>
+        </aside>
+        % endif
+
+      </section>
+    </section>
+</main>
+<!--Popover for discover new course-->
+

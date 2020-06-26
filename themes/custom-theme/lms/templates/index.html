@@ -1,0 +1,917 @@
+<%page expression_filter="h"/>
+<%inherit file="main.html" />
+<%namespace name='static' file='static_content.html'/>
+<%!
+from django.utils.translation import ugettext as _
+from django.urls import reverse
+
+from openedx.core.djangolib.markup import HTML, Text
+%>
+<head>
+  <!-- McDaniel Oct-2018: add the Bootstrap library, unless it's already included from webpack -->
+  % if not uses_bootstrap:
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  % endif
+<style>
+
+  </style>
+  <link rel="stylesheet" href="/static/custom-theme/css/custom-main.css" type="text/css" media="all">
+    <link rel="stylesheet" href="/static/custom-theme/css/registration_modal.css" type="text/css" media="all">
+  <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+</head> 
+<div id="main-bannner-holder" class="container-fluid">
+<div id="password-reset-success" class="alert" style="display:none;">
+  <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+</div>
+<main id="main" aria-label="Content" tabindex="-1">
+          <img src="/static/custom-theme/images/banner-main.png" alt="background"
+          class="responsive no-padding" width="100%">
+    <section class="home">
+      <header>
+
+        <!-- McDaniel Oct-2018: Ok, lets Bootstrap this page! -->
+
+<!--<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script> !-->
+<!--
+        <div style="margin-bottom: 25px;" class="alert alert-success alert-dismissible fade show" role="alert">
+          <h4 class="alert-heading">Well done!</h4>
+          <p>You successfully added Bootstrap 4.0 to your homepage without breaking the LMS. This example text is going to run a bit longer so that you can see how spacing within an alert works with this kind of content.</p>
+          <hr>
+          <p class="mb-0">Don't forget to comment on Lawrence's blog post: <a href="https://blog.lawrencemcdaniel.com/" target="_blank">blog.lawrencemcdaniel.com/</a>.</p>
+        </div>
+-->
+   <!--     <div class="outer-wrapper">      
+          <div class="title">
+                   <div class="heading-group">
+              % if homepage_overlay_html:
+                ${homepage_overlay_html | n, decode.utf8}
+              % else:
+               
+              % endif
+            </div>
+          
+            % if settings.FEATURES.get('ENABLE_COURSE_DISCOVERY'):
+              <div class="course-search">
+                <form method="get" action="/courses">
+                  <label><span class="sr">${_("Search for a course")}</span>
+                    <input class="search-input" name="search_query" type="text" placeholder="${_("Search for a course")}"></input>
+                  </label>
+                  <button class="search-button" type="submit">
+                    <span class="icon fa fa-search" aria-hidden="true"></span><span class="sr">${_("Search")}</span>
+                  </button>
+                </form>
+              </div>
+            % endif
+
+          </div>
+          <%include file="index_promo_video.html" />
+        </div -->
+      </header>
+      <%include file="${courses_list}" />
+
+    </section>
+</main>
+ % if request.user.is_authenticated:
+<!--<script type="text/javascript">
+    var cnt=0;
+  $(document).ready(function(){
+    
+    $.get("${reverse('items_count')}", function(data, status){
+          console.log("Data: " + data + "\nStatus: " + status);
+          cnt=data;
+          if(cnt>0)
+          {$("#item-count").append("<span class=\"badge\"><p id=\"count\">"+cnt+"</p></span>");}
+      });   
+
+  });
+</script> -->
+ % endif
+
+<script type="text/javascript">
+
+  // Register modal
+$(document).ready(function($, undefined) {
+    $(document).delegate('form', 'submit', function(e) {
+    e.preventDefault();
+    var $form = $(this);
+    var formdata = $form.serializeArray();
+    console.log(formdata);
+        $.ajax({
+                type: "POST",
+                url: "create_account",
+                data: formdata,
+                success: function(result) {
+            console.log(result);
+            $('#popUpWindow1').hide();
+                  $('.modal-backdrop').remove();
+                        alert('You have successfully registered!\nPlease login!.');
+                },
+                error: function(result) {
+                        console.log(result);
+            if(result.responseJSON['email'])
+              alert('Email is already registered!')
+            else if(result.responseJSON['username'])
+                          alert('Username is already taken!')
+                }
+            });
+    });
+});
+
+</script>
+<!--Modal for login -->
+    <script type="text/javascript">
+    //Email and password validators
+    
+
+    function validateEmail(fld,error_msg)
+    {
+          if(fld.val()=="")
+          {
+              fld.css("border-color","red");
+              error_msg.text("You didn't enter an email");
+              return false;
+          }
+            else if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(fld.val())==false)
+        {
+            fld.css("border-color","red");
+              error_msg.text("Enter a valid email");
+              return false;
+        }
+      fld.css("border-color","skyblue");
+        return true;
+    }
+
+    
+    function validatePassword(fld,error_msg) {
+          //var illegalChars = /[\W_]/; // allow only letters and numbers
+ 
+          if (fld.val() == "") {
+              fld.css("border-color","red");
+              error_msg.text("You didn't enter a password");
+              return false;
+          } 
+      else if (fld.val().length < 3){
+              fld.css("border-color","red");
+              error_msg.text("Password length must be greater than 3");
+            return false;
+ 
+          }
+            else if (fld.val().length > 15){
+              fld.css("border-color","red");
+              error_msg.text("Password length must be less than 15");
+            return false;
+ 
+          }
+      fld.css("border-color","skyblue");
+        return true;
+    }
+    //On ready
+    $(document).ready(function() { 
+      // Login Modal
+      $("#login-modal-btn").click(function(e) {
+      e.preventDefault();
+      var val_email=validateEmail($('#modal-email'),$('#email-login-error'));
+      var val_pass=validatePassword($('#modal-password'),$('#password-login-error'));
+      if(!val_email) $('#email-login-error').show();
+      else $('#email-login-error').hide();
+      if(!val_pass) $('#password-login-error').show();
+      else $('#password-login-error').hide();
+      if(val_email && val_pass){
+        $('#email-login-error').hide();
+        $('#password-login-error').hide();
+          $.ajax({
+              type: "POST",
+              url: "/login_ajax",
+              data: { 
+                    email: $("#modal-email").val(),
+          password: $("#modal-password").val() 
+              },
+              success: function(result) {
+		    $(".modal").hide();
+		    $(".loader").show();
+		    setTimeout(() => { location.reload(); }, 2000);
+                    //window.location=window.location+"courses";
+              },
+              error: function(result) {
+                    console.log(result);
+        if(result.status == 403)
+      console.log("403"+ result);
+      //window.location=window.location+"courses";
+        else
+                      alert('Email or Password is not correct. Please check!');
+              }
+            });
+        }
+      });
+      
+      // Reset Modal
+      $("#reset-modal-btn").click(function(e) {
+      e.preventDefault();
+      var val_email=validateEmail($('#modal-reset-email'),$('#email-login-error2'));
+      if(!val_email) $('#email-login-error2').show();
+      else $('#email-login-error2').hide();
+      if(val_email){
+          $.ajax({
+              type: "POST",
+              url: "password_reset/",
+              data: { 
+                    email: $("#modal-reset-email").val()
+              },
+              success: function(result) {
+              var x = $("#password-reset-success").html();
+              x = x + result.value;
+              $("#password-reset-success").html(x);
+                      $('#loginHelpWindow').hide();
+              $('#popUpWindow').hide();
+              $('.modal-backdrop').remove();
+              $("#password-reset-success").show();
+              },
+              error: function(result) {
+                      alert('Please check the email you have entered.');
+              }
+            });
+      }
+      });
+      
+     });
+  </script>
+<div class="loader" style="display:none;"></div> 
+<!-- Modal for login -->
+<div class="modal fade" id="popUpWindow">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <!-- header -->
+        <div class="modal-header">
+          <h3 class="modal-title">Login to TestSite</h3>
+    <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <!-- body -->
+          <form role="form">
+            <div class="form-group">
+              <div class="input">
+              <i class="fa fa-envelope" aria-hidden="true" id="icon"></i>
+              <input id="modal-email" type="email" class="form-control" placeholder="Email"/>
+        <div id="email-login-error" class="error" style="display:none; font-size:15px; color:red; margin-top:-2%"></div>
+      </div>
+      <div class="input">
+        <i class="fa fa-lock" aria-hidden="true" id="icon"></i>
+              <input id="modal-password" type="password" class="form-control" placeholder="Password" />
+        <div id="password-login-error" class="error" style="display:none; font-size:15px; color:red; margin-top:-2%"></div>
+            </div>
+          </div>
+          </form>
+        <!-- footer -->
+        <div class="modal-footer" style="padding-top:0.7rem;">
+          <button id="login-modal-btn" class="btn btn-primary btn-block">Log In</button>
+        </div>
+    <br>
+  <div style="display:block; margin:5%; margin-top:2%;">
+        <a href="#" style="display:inline-block;" data-toggle="modal" data-target="#loginHelpWindow">Forgot Password?</a>
+  <a href="#" data-dismiss="modal" data-toggle="modal" data-target="#popUpWindow1" style="display:inline-block; float:right;">Create account</a>
+  </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for Fogot Password-->
+<div class="modal fade" id="loginHelpWindow">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <!-- header -->
+        <div class="modal-header">
+          <h3 class="modal-title">Forgot Password</h3>
+    <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <!-- body -->
+  <h4 id="reset-help-text">Enter your email to get password reset link.</h4>
+  <br>
+<form role="form">
+            <div class="form-group" style="position: relative;">
+              <i class="fa fa-envelope" aria-hidden="true" id="icon"></i>
+              <input id="modal-reset-email" type="email" class="form-control" placeholder="Email"/>
+        <div id="email-login-error2" class="error" style="font-size:15px; color:red; margin-top:-2%"></div>
+            </div>
+          </form>
+        <!-- footer -->
+        <div class="modal-footer" style="margin-top:10%;">
+          <button id="reset-modal-btn" class="btn btn-primary btn-block">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!--Modal for Registration -->
+<div class="modal fade" id="popUpWindow1">
+    <div class="modal-dialog" id="register-modal-dialog">
+      <div class="modal-content" id="register-modal-content">
+        <!-- header -->
+        <div class="modal-header" id="register-modal-header">
+          <div class="toggle-form">
+            <span class="text">Already have an account?</span>
+            <a  href="#" data-dismiss="modal" data-toggle="modal" data-target="#popUpWindow">${_("Sign in")}</a>
+            <button type="button" class="close" data-dismiss="modal" id="close-button">×</button>
+          </div>
+        <h2>Create an Account</h2>
+      </div>
+        <!-- body -->
+<form id="register-modal-form" action="/create_account" autocomplete="off" tabindex="-1" method="POST">      
+  <div class="required-fields">
+   <div class="input">
+     <i class="fa fa-envelope" id="icon"></i>
+     <input id="register-email" type="email" name="email" class="form-control" aria-describedby="register-email-desc register-email-validation-error" minlength="3" maxlength="254" required="" value="" placeholder="Email">
+   </div>
+  <div class="input">
+    <i class="fa fa-user" id="icon"></i>
+    <input id="register-name" type="text" name="name" class="form-control" aria-describedby="register-name-desc register-name-validation-error" maxlength="255" required="" value="" placeholder="Full Name">
+  </div>
+  <div class="input">
+    <i class="fa fa-users" id="icon"></i>
+    <input id="register-username" type="text" name="username" class="form-control" aria-describedby="register-username-desc register-username-validation-error" minlength="2" maxlength="30" required="" value="" placeholder="Username">
+  </div>
+  <div class="input">
+    <i class="fa fa-lock" id="icon"></i>
+    <input id="register-password" type="password" name="password" class="form-control" aria-describedby="register-password-desc register-password-validation-error" minlength="2" maxlength="75" required="" value="" placeholder="Password">
+  </div>
+  <div class="input">
+    <i class="fa fa-lock" id="icon"></i>
+    <input id="register-password-confirm" type="password" name="confirm-password" class="form-control" aria-describedby="register-password-desc register-password-validation-error" minlength="2" maxlength="75" required="" value="" placeholder="Confirm Password">
+    <span id='mismatch'><i class="fa fa-exclamation-circle"></i></span>
+    <span id="match"><i class="fa fa-check-circle"></i></span>
+  </div>
+  <div class="input">
+    <i class="fa fa-globe" id="icon"></i>
+        <select id="register-country" name="country" class="form-control" aria-describedby="register-country-desc register-country-validation-error" data-errormsg-required="Select your country or region of residence." aria-required="true" required="" placeholder="Select a Country">
+            
+                <option value="" data-isdefault="true" selected="">Select Country</option>
+            
+                <option value="AF">Afghanistan</option>
+            
+                <option value="AX">Åland Islands</option>
+            
+                <option value="AL">Albania</option>
+            
+                <option value="DZ">Algeria</option>
+            
+                <option value="AS">American Samoa</option>
+            
+                <option value="AD">Andorra</option>
+            
+                <option value="AO">Angola</option>
+            
+                <option value="AI">Anguilla</option>
+            
+                <option value="AQ">Antarctica</option>
+            
+                <option value="AG">Antigua and Barbuda</option>
+            
+                <option value="AR">Argentina</option>
+            
+                <option value="AM">Armenia</option>
+            
+                <option value="AW">Aruba</option>
+            
+                <option value="AU">Australia</option>
+            
+                <option value="AT">Austria</option>
+            
+                <option value="AZ">Azerbaijan</option>
+            
+                <option value="BS">Bahamas</option>
+            
+                <option value="BH">Bahrain</option>
+            
+                <option value="BD">Bangladesh</option>
+            
+                <option value="BB">Barbados</option>
+            
+                <option value="BY">Belarus</option>
+            
+                <option value="BE">Belgium</option>
+            
+                <option value="BZ">Belize</option>
+            
+                <option value="BJ">Benin</option>
+            
+                <option value="BM">Bermuda</option>
+            
+                <option value="BT">Bhutan</option>
+            
+                <option value="BO">Bolivia</option>
+            
+                <option value="BQ">Bonaire, Sint Eustatius and Saba</option>
+            
+                <option value="BA">Bosnia and Herzegovina</option>
+            
+                <option value="BW">Botswana</option>
+            
+                <option value="BV">Bouvet Island</option>
+            
+                <option value="BR">Brazil</option>
+            
+                <option value="IO">British Indian Ocean Territory</option>
+            
+                <option value="BN">Brunei</option>
+            
+                <option value="BG">Bulgaria</option>
+            
+                <option value="BF">Burkina Faso</option>
+            
+                <option value="BI">Burundi</option>
+            
+                <option value="CV">Cabo Verde</option>
+            
+                <option value="KH">Cambodia</option>
+            
+                <option value="CM">Cameroon</option>
+            
+                <option value="CA">Canada</option>
+            
+                <option value="KY">Cayman Islands</option>
+            
+                <option value="CF">Central African Republic</option>
+            
+                <option value="TD">Chad</option>
+            
+                <option value="CL">Chile</option>
+            
+                <option value="CN">China</option>
+            
+                <option value="CX">Christmas Island</option>
+            
+                <option value="CC">Cocos (Keeling) Islands</option>
+            
+                <option value="CO">Colombia</option>
+            
+                <option value="KM">Comoros</option>
+            
+                <option value="CG">Congo</option>
+            
+                <option value="CD">Congo (the Democratic Republic of the)</option>
+            
+                <option value="CK">Cook Islands</option>
+            
+                <option value="CR">Costa Rica</option>
+            
+                <option value="CI">Côte d'Ivoire</option>
+            
+                <option value="HR">Croatia</option>
+            
+                <option value="CU">Cuba</option>
+            
+                <option value="CW">Curaçao</option>
+            
+                <option value="CY">Cyprus</option>
+            
+                <option value="CZ">Czechia</option>
+            
+                <option value="DK">Denmark</option>
+            
+                <option value="DJ">Djibouti</option>
+            
+                <option value="DM">Dominica</option>
+            
+                <option value="DO">Dominican Republic</option>
+            
+                <option value="EC">Ecuador</option>
+            
+                <option value="EG">Egypt</option>
+            
+                <option value="SV">El Salvador</option>
+            
+                <option value="GQ">Equatorial Guinea</option>
+            
+                <option value="ER">Eritrea</option>
+            
+                <option value="EE">Estonia</option>
+            
+                <option value="SZ">Eswatini</option>
+            
+                <option value="ET">Ethiopia</option>
+            
+                <option value="FK">Falkland Islands  [Malvinas]</option>
+            
+                <option value="FO">Faroe Islands</option>
+            
+                <option value="FJ">Fiji</option>
+            
+                <option value="FI">Finland</option>
+            
+                <option value="FR">France</option>
+            
+                <option value="GF">French Guiana</option>
+            
+                <option value="PF">French Polynesia</option>
+            
+                <option value="TF">French Southern Territories</option>
+            
+                <option value="GA">Gabon</option>
+            
+                <option value="GM">Gambia</option>
+            
+                <option value="GE">Georgia</option>
+            
+                <option value="DE">Germany</option>
+            
+                <option value="GH">Ghana</option>
+            
+                <option value="GI">Gibraltar</option>
+            
+                <option value="GR">Greece</option>
+            
+                <option value="GL">Greenland</option>
+            
+                <option value="GD">Grenada</option>
+            
+                <option value="GP">Guadeloupe</option>
+            
+                <option value="GU">Guam</option>
+            
+                <option value="GT">Guatemala</option>
+            
+                <option value="GG">Guernsey</option>
+            
+                <option value="GN">Guinea</option>
+            
+                <option value="GW">Guinea-Bissau</option>
+            
+                <option value="GY">Guyana</option>
+            
+                <option value="HT">Haiti</option>
+            
+                <option value="HM">Heard Island and McDonald Islands</option>
+            
+                <option value="VA">Holy See</option>
+            
+                <option value="HN">Honduras</option>
+            
+                <option value="HK">Hong Kong</option>
+            
+                <option value="HU">Hungary</option>
+            
+                <option value="IS">Iceland</option>
+            
+                <option value="IN">India</option>
+            
+                <option value="ID">Indonesia</option>
+            
+                <option value="IR">Iran</option>
+            
+                <option value="IQ">Iraq</option>
+            
+                <option value="IE">Ireland</option>
+            
+                <option value="IM">Isle of Man</option>
+            
+                <option value="IL">Israel</option>
+            
+                <option value="IT">Italy</option>
+            
+                <option value="JM">Jamaica</option>
+            
+                <option value="JP">Japan</option>
+            
+                <option value="JE">Jersey</option>
+            
+                <option value="JO">Jordan</option>
+            
+                <option value="KZ">Kazakhstan</option>
+            
+                <option value="KE">Kenya</option>
+            
+                <option value="KI">Kiribati</option>
+            
+                <option value="XK">Kosovo</option>
+            
+                <option value="KW">Kuwait</option>
+            
+                <option value="KG">Kyrgyzstan</option>
+            
+                <option value="LA">Laos</option>
+            
+                <option value="LV">Latvia</option>
+            
+                <option value="LB">Lebanon</option>
+            
+                <option value="LS">Lesotho</option>
+            
+                <option value="LR">Liberia</option>
+            
+                <option value="LY">Libya</option>
+            
+                <option value="LI">Liechtenstein</option>
+            
+                <option value="LT">Lithuania</option>
+            
+                <option value="LU">Luxembourg</option>
+            
+                <option value="MO">Macao</option>
+            
+                <option value="MG">Madagascar</option>
+            
+                <option value="MW">Malawi</option>
+            
+                <option value="MY">Malaysia</option>
+            
+                <option value="MV">Maldives</option>
+            
+                <option value="ML">Mali</option>
+            
+                <option value="MT">Malta</option>
+            
+                <option value="MH">Marshall Islands</option>
+            
+                <option value="MQ">Martinique</option>
+            
+                <option value="MR">Mauritania</option>
+            
+                <option value="MU">Mauritius</option>
+            
+                <option value="YT">Mayotte</option>
+            
+                <option value="MX">Mexico</option>
+            
+                <option value="FM">Micronesia (Federated States of)</option>
+            
+                <option value="MD">Moldova</option>
+            
+                <option value="MC">Monaco</option>
+            
+                <option value="MN">Mongolia</option>
+            
+                <option value="ME">Montenegro</option>
+            
+                <option value="MS">Montserrat</option>
+            
+                <option value="MA">Morocco</option>
+            
+                <option value="MZ">Mozambique</option>
+            
+                <option value="MM">Myanmar</option>
+            
+                <option value="NA">Namibia</option>
+            
+                <option value="NR">Nauru</option>
+            
+                <option value="NP">Nepal</option>
+            
+                <option value="NL">Netherlands</option>
+            
+                <option value="NC">New Caledonia</option>
+            
+                <option value="NZ">New Zealand</option>
+            
+                <option value="NI">Nicaragua</option>
+            
+                <option value="NE">Niger</option>
+            
+                <option value="NG">Nigeria</option>
+            
+                <option value="NU">Niue</option>
+            
+                <option value="NF">Norfolk Island</option>
+            
+                <option value="KP">North Korea</option>
+            
+                <option value="MK">North Macedonia</option>
+            
+                <option value="MP">Northern Mariana Islands</option>
+            
+                <option value="NO">Norway</option>
+            
+                <option value="OM">Oman</option>
+            
+                <option value="PK">Pakistan</option>
+            
+                <option value="PW">Palau</option>
+            
+                <option value="PS">Palestine, State of</option>
+            
+                <option value="PA">Panama</option>
+            
+                <option value="PG">Papua New Guinea</option>
+            
+                <option value="PY">Paraguay</option>
+            
+                <option value="PE">Peru</option>
+            
+                <option value="PH">Philippines</option>
+            
+                <option value="PN">Pitcairn</option>
+            
+                <option value="PL">Poland</option>
+            
+                <option value="PT">Portugal</option>
+            
+                <option value="PR">Puerto Rico</option>
+            
+                <option value="QA">Qatar</option>
+            
+                <option value="RE">Réunion</option>
+            
+                <option value="RO">Romania</option>
+            
+                <option value="RU">Russia</option>
+            
+                <option value="RW">Rwanda</option>
+            
+                <option value="BL">Saint Barthélemy</option>
+            
+                <option value="SH">Saint Helena, Ascension and Tristan da Cunha</option>
+            
+                <option value="KN">Saint Kitts and Nevis</option>
+            
+                <option value="LC">Saint Lucia</option>
+            
+                <option value="MF">Saint Martin (French part)</option>
+            
+                <option value="PM">Saint Pierre and Miquelon</option>
+            
+                <option value="VC">Saint Vincent and the Grenadines</option>
+            
+                <option value="WS">Samoa</option>
+            
+                <option value="SM">San Marino</option>
+            
+                <option value="ST">Sao Tome and Principe</option>
+            
+                <option value="SA">Saudi Arabia</option>
+            
+                <option value="SN">Senegal</option>
+            
+                <option value="RS">Serbia</option>
+            
+                <option value="SC">Seychelles</option>
+            
+                <option value="SL">Sierra Leone</option>
+            
+                <option value="SG">Singapore</option>
+            
+                <option value="SX">Sint Maarten (Dutch part)</option>
+            
+                <option value="SK">Slovakia</option>
+            
+                <option value="SI">Slovenia</option>
+            
+                <option value="SB">Solomon Islands</option>
+            
+                <option value="SO">Somalia</option>
+            
+                <option value="ZA">South Africa</option>
+            
+                <option value="GS">South Georgia and the South Sandwich Islands</option>
+            
+                <option value="KR">South Korea</option>
+            
+                <option value="SS">South Sudan</option>
+            
+                <option value="ES">Spain</option>
+            
+                <option value="LK">Sri Lanka</option>
+            
+                <option value="SD">Sudan</option>
+            
+                <option value="SR">Suriname</option>
+            
+                <option value="SJ">Svalbard and Jan Mayen</option>
+            
+                <option value="SE">Sweden</option>
+            
+                <option value="CH">Switzerland</option>
+            
+                <option value="SY">Syria</option>
+            
+                <option value="TW">Taiwan</option>
+            
+                <option value="TJ">Tajikistan</option>
+            
+                <option value="TZ">Tanzania</option>
+            
+                <option value="TH">Thailand</option>
+            
+                <option value="TL">Timor-Leste</option>
+            
+                <option value="TG">Togo</option>
+            
+                <option value="TK">Tokelau</option>
+            
+                <option value="TO">Tonga</option>
+            
+                <option value="TT">Trinidad and Tobago</option>
+            
+                <option value="TN">Tunisia</option>
+            
+                <option value="TR">Turkey</option>
+            
+                <option value="TM">Turkmenistan</option>
+            
+                <option value="TC">Turks and Caicos Islands</option>
+            
+                <option value="TV">Tuvalu</option>
+            
+                <option value="UG">Uganda</option>
+            
+                <option value="UA">Ukraine</option>
+            
+                <option value="AE">United Arab Emirates</option>
+            
+                <option value="GB">United Kingdom</option>
+            
+                <option value="UM">United States Minor Outlying Islands</option>
+            
+                <option value="US">United States of America</option>
+            
+                <option value="UY">Uruguay</option>
+            
+                <option value="UZ">Uzbekistan</option>
+            
+                <option value="VU">Vanuatu</option>
+            
+                <option value="VE">Venezuela</option>
+            
+                <option value="VN">Vietnam</option>
+            
+                <option value="VG">Virgin Islands (British)</option>
+            
+                <option value="VI">Virgin Islands (U.S.)</option>
+            
+                <option value="WF">Wallis and Futuna</option>
+            
+                <option value="EH">Western Sahara</option>
+            
+                <option value="YE">Yemen</option>
+            
+                <option value="ZM">Zambia</option>
+            
+                <option value="ZW">Zimbabwe</option>
+        </select>
+  </div>
+</div>
+
+<div class="form-field plaintext-honor_code">
+    <span class="plaintext-field">By creating an account, you agree to the  <br>                 
+      <a href="/honor" rel="noopener" target="_blank">Terms of Service and Honor Code</a> & 
+      <a href="/privacy" rel="noopener" target="_blank">Privacy Policy</a>.
+    </span>
+    <input name="terms_of_service" type="hidden" value="true">
+    <input name="honor_code" type="hidden" value="true">
+</div>
+<!-- footer -->
+<div class="submit-button">
+  <button type='submit' id="register-button">
+    Create Account
+  </button>
+</div>
+</form>
+</div>
+</div>
+</div>
+ % if show_homepage_promo_video:
+  <section id="video-modal" class="modal home-page-video-modal video-modal">
+    <div class="inner-wrapper">
+      <iframe title="YouTube Video" width="640" height="360" src="//www.youtube.com/embed/${homepage_promo_video_youtube_id}?showinfo=0" frameborder="0" allowfullscreen></iframe>
+    </div>
+  </section>
+ % endif
+
+<%block name="js_extra">
+   <script type="text/javascript">
+       $(window).load(function() {
+         if(getParameterByName('next')) {
+              $('#login').trigger("click");
+         }
+      })
+   </script>
+    </%block>
+
+   % if show_signup_immediately is not UNDEFINED:
+  ## NOTE: This won't work in production, because anonymous views are cached, so it will
+  ## show either with or without this extra js for 3 minutes at a time.
+<script type="text/javascript">
+  $(window).load(function() {$('#signup_action').trigger("click");});
+</script>
+ % endif
+ % if not uses_bootstrap:
+  <!-- McDaniel Oct-2018: add the Bootstrap javascript library, unless it's already included from webpack -->
+  ## xss-lint: disable=mako-invalid-js-filter
+  <script type="text/javascript" src="${static.url('common/js/vendor/bootstrap.bundle.js')}"></script>
+ % endif
+<script type="text/javascript">
+        $("#match").hide();
+  $("#mismatch").hide();
+  $('#register-password, #register-password-confirm').on('keyup', function () {
+  if ($('#register-password').val() == $('#register-password-confirm').val()) {
+    $("#mismatch").hide();
+    $('#match').show();
+  } else 
+  {
+    $("#match").hide();
+    $('#mismatch').show();
+  }
+  if($("#register-password").val().length==0 || $("#register-password-confirm").val().length==0)
+  {
+  $("#match").hide();
+  $("#mismatch").hide();
+  }
+});
+</script>

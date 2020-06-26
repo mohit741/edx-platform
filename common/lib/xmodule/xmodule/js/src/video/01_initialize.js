@@ -571,6 +571,12 @@ function(VideoPlayer, i18n, moment, _) {
             availableHDQualities: []
         });
 
+	if(this.config.iframe_src){
+        	iframe_html = $.parseHTML(this.config.iframe_src);
+		container.replaceWith(iframe_html);
+		return __dfd__.promise();
+	}
+
         if (this.config.endTime < this.config.startTime) {
             this.config.endTime = null;
         }

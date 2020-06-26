@@ -192,6 +192,7 @@ def all_permissions_for_user_in_course(user, course_id):
         for permission in GLOBAL_STAFF_ROLE_PERMISSIONS:
             permission_names.add(permission)
 
+    # TODO logging.info('------------------------All permission -------------------------%s', permission_names)
     return permission_names
 
 

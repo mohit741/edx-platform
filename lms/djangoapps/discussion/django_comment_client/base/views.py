@@ -15,6 +15,7 @@ from django.core import exceptions
 from django.http import Http404, HttpResponse, HttpResponseServerError
 from django.utils.translation import ugettext as _
 from django.views.decorators import csrf
+from django.views.decorators.csrf import csrf_exempt, requires_csrf_token
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.http import require_GET, require_POST
 from opaque_keys.edx.keys import CourseKey
@@ -178,6 +179,7 @@ def track_thread_viewed_event(request, course, thread):
     track_forum_event(request, event_name, course, thread, event_data)
 
 
+# TODO
 def permitted(func):
     """
     View decorator to verify the user is authorized to access this endpoint.
@@ -208,7 +210,7 @@ def permitted(func):
 
         course_key = CourseKey.from_string(kwargs['course_id'])
         content, user_group_id, content_user_group_id = fetch_content()
-
+        log.info('--------------------comment views----------------------%s %s %s %s %s %s', content, user_group_id, content_user_group_id, kwargs['course_id'], request.user, request.view_name)
         if check_permissions_by_view(request.user, course_key, content,
                                      request.view_name, user_group_id, content_user_group_id):
             return func(request, *args, **kwargs)
@@ -232,6 +234,7 @@ def ajax_content_response(request, course_key, content):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def create_thread(request, course_id, commentable_id):
     """
     Given a course and commentable ID, create the thread
@@ -315,6 +318,7 @@ def create_thread(request, course_id, commentable_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def update_thread(request, course_id, thread_id):
     """
     Given a course id and thread id, update a existing thread, used for both static and ajax submissions
@@ -406,6 +410,7 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def create_comment(request, course_id, thread_id):
     """
     given a course_id and thread_id, test for comment depth. if not too deep,
@@ -419,6 +424,7 @@ def create_comment(request, course_id, thread_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def delete_thread(request, course_id, thread_id):
     """
     given a course_id and thread_id, delete this thread
@@ -434,6 +440,7 @@ def delete_thread(request, course_id, thread_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def update_comment(request, course_id, comment_id):
     """
     given a course_id and comment_id, update the comment with payload attributes
@@ -457,6 +464,7 @@ def update_comment(request, course_id, comment_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def endorse_comment(request, course_id, comment_id):
     """
     given a course_id and comment_id, toggle the endorsement of this comment,
@@ -475,6 +483,7 @@ def endorse_comment(request, course_id, comment_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def openclose_thread(request, course_id, thread_id):
     """
     given a course_id and thread_id, toggle the status of this thread
@@ -494,6 +503,7 @@ def openclose_thread(request, course_id, thread_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def create_sub_comment(request, course_id, comment_id):
     """
     given a course_id and comment_id, create a response to a comment
@@ -507,6 +517,7 @@ def create_sub_comment(request, course_id, comment_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def delete_comment(request, course_id, comment_id):
     """
     given a course_id and comment_id delete this comment
@@ -541,6 +552,7 @@ def _vote_or_unvote(request, course_id, obj, value='up', undo_vote=False):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def vote_for_comment(request, course_id, comment_id, value):
     """
     Given a course_id and comment_id, vote for this response.  AJAX only.
@@ -554,6 +566,7 @@ def vote_for_comment(request, course_id, comment_id, value):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def undo_vote_for_comment(request, course_id, comment_id):
     """
     given a course id and comment id, remove vote
@@ -565,6 +578,7 @@ def undo_vote_for_comment(request, course_id, comment_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def vote_for_thread(request, course_id, thread_id, value):
     """
     given a course id and thread id vote for this thread
@@ -578,6 +592,7 @@ def vote_for_thread(request, course_id, thread_id, value):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def undo_vote_for_thread(request, course_id, thread_id):
     """
     given a course id and thread id, remove users vote for thread
@@ -589,6 +604,7 @@ def undo_vote_for_thread(request, course_id, thread_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def flag_abuse_for_thread(request, course_id, thread_id):
     """
     given a course_id and thread_id flag this thread for abuse
@@ -605,6 +621,7 @@ def flag_abuse_for_thread(request, course_id, thread_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def un_flag_abuse_for_thread(request, course_id, thread_id):
     """
     given a course id and thread id, remove abuse flag for this thread
@@ -626,6 +643,7 @@ def un_flag_abuse_for_thread(request, course_id, thread_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def flag_abuse_for_comment(request, course_id, comment_id):
     """
     given a course and comment id, flag comment for abuse
@@ -641,6 +659,7 @@ def flag_abuse_for_comment(request, course_id, comment_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def un_flag_abuse_for_comment(request, course_id, comment_id):
     """
     given a course_id and comment id, unflag comment for abuse
@@ -661,6 +680,7 @@ def un_flag_abuse_for_comment(request, course_id, comment_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def pin_thread(request, course_id, thread_id):
     """
     given a course id and thread id, pin this thread
@@ -677,6 +697,7 @@ def pin_thread(request, course_id, thread_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def un_pin_thread(request, course_id, thread_id):
     """
     given a course id and thread id, remove pin from this thread
@@ -693,6 +714,7 @@ def un_pin_thread(request, course_id, thread_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def follow_thread(request, course_id, thread_id):
     user = cc.User.from_django_user(request.user)
     thread = cc.Thread.find(thread_id)
@@ -704,6 +726,7 @@ def follow_thread(request, course_id, thread_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def follow_commentable(request, course_id, commentable_id):
     """
     given a course_id and commentable id, follow this commentable
@@ -718,6 +741,7 @@ def follow_commentable(request, course_id, commentable_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def unfollow_thread(request, course_id, thread_id):
     """
     given a course id and thread id, stop following this thread
@@ -733,6 +757,7 @@ def unfollow_thread(request, course_id, thread_id):
 @require_POST
 @login_required
 @permitted
+@csrf_exempt
 def unfollow_commentable(request, course_id, commentable_id):
     """
     given a course id and commentable id stop following commentable

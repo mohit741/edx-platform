@@ -1,0 +1,78 @@
+      <div class="colophon">
+         <!-- <nav class="navbar site-nav navbar-expand-sm" aria-label="${_('About')}">
+            <ul class="navbar-nav">
+              % for item_num, link in enumerate(footer['navigation_links'], start=1):
+                <li class="nav-item">
+                  <a class="nav-link" href="${link['url']}">${link['title']}</a>
+                </li>
+              % endfor
+            </ul>
+          </nav>-->
+
+          <div class="wrapper-logo">
+            <div class="logo-copyright">
+          <p id="footer-logo">
+            <a href="/">
+                ## The default logo is a placeholder.
+                ## You can either replace this link entirely or update
+                ## the FOOTER_ORGANIZATION_IMAGE in Django settings.
+                ## If you customize FOOTER_ORGANIZATION_IMAGE, then the image
+                ## can be included in the footer on other sites
+                ## (e.g. a blog or marketing front-end) to provide a consistent
+                ## user experience.  See the branding app for details.
+                <img alt="${_('organization logo')}" src="https://midhafin.com/wp-content/uploads/2019/11/cropped-mfmain-7.png">
+              </a>
+            </p>
+              <span class="footer__copyright" id="Copyright"> 
+       Copyright © 2019 MidhaFin.
+      </span>
+          <nav class="nav-legal" aria-label="${_('Legal')}">
+          <ul>
+            % for item_num, link in enumerate(footer['legal_links'], start=1):
+              <li class="nav-legal-0${item_num}">
+                <a href="${link['url']}">${link['title']}</a>
+              </li>
+            % endfor
+           <!--
+             <li><a href="${footer['edx_org_link']['url']}">${footer['edx_org_link']['text']}</a></li>
+           -->
+          </ul>
+        </nav>
+          </div>
+        
+      </div>
+          ## Site operators: Please do not remove this paragraph! This attributes back to edX and makes your acknowledgement of edX's trademarks clear.
+<!--        
+  <p class="copyright">${footer['copyright']}
+               % if icp_license_info.get('icp_license'):
+                ${u" | {text}".format(text=icp_license_info.get('text'))}
+                <a href="${icp_license_info.get('icp_license_link', '#')}">
+                    ${u" {icp}".format(icp=icp_license_info.get('icp_license'))}
+                </a>
+              % endif
+          </p>
+-->
+
+        
+
+        
+
+       <!-- <div class="col-md-3">
+>>>>>>> c95dede6b338e96fa5ab9d1c43fb79cc3c4e402c
+          ## Please leave this link and use one of the logos provided
+          ## The OpenEdX link may be hidden when this view is served
+          ## through an API to partner sites (such as marketing sites or blogs),
+          ## which are not technically powered by Open edX.
+          % if not hide_openedx_link:
+            <div class="footer-about-openedx">
+              <p>
+                <a href="${footer['openedx_link']['url']}">
+                  <img src="${footer['openedx_link']['image']}" alt="${footer['openedx_link']['title']}" width="140" />
+                </a>
+              </p>
+            </div>
+          % endif
+        </div>
+      </div>
+    -->
+    </div>

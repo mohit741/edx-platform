@@ -513,6 +513,16 @@ def get_course_assignment_date_blocks(course, user, request, num_return=None,
     return date_blocks
 
 
+# Custom sorting -mohit741
+def sort_by_subject_then_program(courses):
+
+    courses = sorted(
+        courses,
+        key=lambda course: (course.subject, course.program, course.display_name),
+        reverse=False
+    )
+    return courses
+
 @request_cached()
 def get_course_assignments(course_key, user, request, include_access=False):
     """

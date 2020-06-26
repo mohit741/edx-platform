@@ -87,12 +87,12 @@ class Course(object):
         if 'verification_deadline' in attrs:
             self.verification_deadline = attrs.get('verification_deadline')
 
-        existing_modes = {mode.mode_slug: mode for mode in self.modes}
+        existing_modes = {mode.sku: mode for mode in self.modes}
         merged_modes = set()
         merged_mode_keys = set()
 
         for posted_mode in attrs.get('modes', []):
-            merged_mode = existing_modes.get(posted_mode.mode_slug, CourseMode())
+            merged_mode = existing_modes.get(posted_mode.sku, CourseMode())
 
             merged_mode.course_id = self.id
             merged_mode.mode_slug = posted_mode.mode_slug
@@ -105,7 +105,7 @@ class Course(object):
             merged_mode.save()
 
             merged_modes.add(merged_mode)
-            merged_mode_keys.add(merged_mode.mode_slug)
+            merged_mode_keys.add(merged_mode.sku)
 
         # Masters degrees are not sold through the eCommerce site.
         # So, Masters course modes are not included in PUT calls to this API,

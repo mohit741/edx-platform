@@ -1,0 +1,99 @@
+<%page expression_filter="h"/>
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="../main.html" />
+
+<%block name="pagetitle">${_("Contact")}</%block>
+<link rel="stylesheet" href="/static/custom-theme/css/custom_static.css" type="text/css" media="all">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="/static/custom-theme/css/intlTelInput.css">
+<script src="https://code.jquery.com/jquery-latest.min.js"></script>
+<script src="/static/custom-theme/js/intlTelInput-jquery.min.js"></script>
+<script>
+$(function() {
+$("#telephone").intlTelInput({
+allowExtensions: true,
+autoFormat: false,
+autoHideDialCode: false,
+autoPlaceholder: false,
+defaultCountry: "auto",
+ipinfoToken: "yolo",
+nationalMode: false,
+numberType: "MOBILE",
+initialCountry: "in",
+//onlyCountries: ['us', 'gb', 'ch', 'ca', 'do'],
+//preferredCountries: ['cn', 'jp'],
+preventInvalidNumbers: true,
+utilsScript: "lib/libphonenumber/build/utils.js"
+});
+});
+</script>
+<main id="main" aria-label="Content" tabindex="-1">
+    <section class="container about">
+        <h1 class="page_header">
+            <%block name="pageheader">${page_header or _("Contact Us")}</%block>
+        </h1>
+        <div class="contact-form">
+        <form>
+        	<h3 class="contact_form header">Message Us</h3>
+        	<div class="contact_form name">
+        	<span><i class="fa fa-user" aria-hidden="true"></i></span>
+        	<input type="text" name="name" placeholder="Name" id="name" class="form-control"/>
+        </div>
+        <div class="contact_form email ">
+        	<span><i class="fa fa-envelope" aria-hidden="true"></i></span>
+        	<input type="email" name="email" placeholder="Email" id="email" class="form-control">
+        </div>
+        <div class="contact_form number">
+        	<span><i class="fa fa-phone" aria-hidden="true"></i></span>
+        	<!--<input type="tel" name="number" placeholder="Whatsapp Number" id="number" class="form-control">-->
+        	<input type="tel" placeholder="Whatsapp Number" id="telephone">
+        </div>
+        <div class="contact_form course select">
+        <label for="course" id="course_label">Intrested in:</label>
+        	<select id="course" class="form-control">
+        		<option value="">...</option>
+        		<option value="ABC Part 1">ABC Part 1</option>
+        		<option value="ABC Part 2">ABC Part 2</option>
+        		<option value="ABC Part 1 and Part 2 Combined">ABC Part 1 and Part 2 Combined</option>
+        	</select>
+        </div>
+        <div class="contact_form message">
+        	<label for="message" id="message-text">Message</label>
+        	<textarea class="form-control" name="message"></textarea>
+        </div>
+        	<button id="contact_submit">Submit</button>
+        </form>
+        </div>
+        <div class="other_contact_options">
+        	<h5 class="other_contact_options-title">To contact us or for any other queries, please</h5>
+        	<div class="Whatsapp_contact">
+        	<p style="text-align: center;" id="Whatsapp_msg">
+        		<a href="https://api.whatsapp.com/send?phone=917903925317&text=I%20am%20interested%20in%20your%20services.%20How%20to%20get%20started%3F">
+        		<span id="Whatsapp_icon"><i class="fa fa-whatsapp" aria-hidden="true"></i></span>
+        		</a>
+        		<p id="whatsapp-text">WhatsApp on</p>
+        		<strong><a href="tel:+91-9669966969">&nbsp;<span style="color: #6a1b1a;">+91 9669 9669 69</span></a></strong>
+        	</p>
+        	</div>
+        	<p id="or_text">Or
+        	<br>
+        	<div class="email_contact">
+        		<p id="email_msg"><a style="color: #6a1b1a;" href="mailto:TestSite@outlook.com">
+        			<span id="email_icon"><i class="fa fa-envelope" aria-hidden="true"></i></span></a>
+        			<p id="mailto-text">mail to </p>
+        			<span style="color: #6a1b1a;"><strong><a style="color: #6a1b1a;" href="mailto:TestSite@outlook.com">TestSite@outlook.com</a></strong></span>
+        		</p>
+        	</div>
+
+        </div>
+       <!-- <p>
+            <%block name="pagecontent">${page_content or _("This page left intentionally blank. Feel free to add your own content.")}</%block>
+        </p>
+    -->
+    </section>
+    <div class="icon_whatsapp">
+    <a href="https://api.whatsapp.com/send?phone=91969669696969&amp;text=I%20am%20interested%20in%20your%20services.%20How%20to%20get%20started%3F">
+        <span id="Whatsapp_icon"><i class="fa fa-whatsapp" aria-hidden="true"></i></span>
+    </a>
+</div>
+</main>

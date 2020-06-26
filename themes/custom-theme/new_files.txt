@@ -1,0 +1,12 @@
+/lms/templates/
+
+	access_till_pass.html
+	complete_study_material.html
+	doubt_clear.html
+	lecture_videos.html
+	mock_tests.html
+	question_bank.html
+	sample_paper.html
+	study_planner.html
+	tp1_info.html
+	tp2_info.html
